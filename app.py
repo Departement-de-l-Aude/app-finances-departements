@@ -11,7 +11,7 @@ st.set_page_config(page_title="Analyse Financière Départementale", layout="wid
 # --- 2. CHARGEMENT DES DONNÉES ---
 @st.cache_data
 def load_data():
-    return pd.read_zip("ofgl-base-departements.zip", sep=",", low_memory=False)
+    return pd.read_csv("ofgl-base-departements.zip", sep=",", low_memory=False)
 
 try:
     df = load_data()
