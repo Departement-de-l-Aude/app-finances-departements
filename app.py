@@ -20,8 +20,12 @@ except FileNotFoundError:
     st.error("Le fichier 'ofgl-base-departements.zip' est introuvable. Placez-le dans le même dossier que ce script.")
     st.stop()
 
+# --- RÉCUPÉRATION DES ANNÉES MIN ET MAX ---
+min_annee = int(df_main["Exercice"].min())
+max_annee = int(df_main["Exercice"].max())
 
-# --- 3. FONCTIONS AUXILIAIRES GRAPHIQUES ---
+
+# --- 3. FONCTIONS AUXILIAIRES GRAPHIQUES (Pour ne pas se répéter !) ---
 
 def ajouter_etiquettes_desendettement(ax, df_donnees):
     """Ajoute les étiquettes avec les vraies valeurs pour la capacité de désendettement"""
@@ -64,6 +68,7 @@ def generer_graphiques(df_plot, titre):
     axes[1, 0].axhline(3, color="green", linestyle="--", linewidth=1.5, label="Endettement maîtrisé (à maintenir)")
     axes[1, 0].set_xticks(df_plot["Exercice"].unique())
     
+    # On gère l'affichage de la légende proprement s'il y a des courbes
     if axes[1,0].get_legend() is not None:
         axes[1, 0].legend(loc='upper right', fontsize='small')
         
@@ -99,13 +104,15 @@ def departements_meme_strate(df, code_dep, mm_region=False):
     df_resultat = df_resultat[df_resultat["Code Insee 2024 Département"] != code_dep]
     return df_resultat.reset_index(drop=True)
 
-def comparer_departements(df, code_dep1, code_dep2):
+def comparer_departements(df, code_dep1, code_dep2, intervalle_annees):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
     code_dep1, code_dep2 = str(code_dep1), str(code_dep2)
+    annee_min, annee_max = intervalle_annees
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & \
-                   (df_temp["Code Insee 2024 Département"].isin([code_dep1, code_dep2]))
+                   (df_temp["Code Insee 2024 Département"].isin([code_dep1, code_dep2])) & \
+                   (df_temp["Exercice"] >= annee_min) & (df_temp["Exercice"] <= annee_max)
                    
     pivot = df_temp[serie_filtre].pivot_table(index=["Exercice", "Nom 2024 Département"], columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
@@ -123,17 +130,19 @@ def comparer_departements(df, code_dep1, code_dep2):
     
     return fig, df_final
 
-def comparer_departement_strate(df, code_dep):
+def comparer_departement_strate(df, code_dep, intervalle_annees):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
     code_dep = str(code_dep)
+    annee_min, annee_max = intervalle_annees
     
     df_dep_cible = df_temp[df_temp["Code Insee 2024 Département"] == code_dep]
     strate = df_dep_cible["Strate population 2024"].iloc[0]
     nom_dep = df_dep_cible["Nom 2024 Département"].iloc[0]
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & \
-                   (df_temp["Strate population 2024"] == strate)
+                   (df_temp["Strate population 2024"] == strate) & \
+                   (df_temp["Exercice"] >= annee_min) & (df_temp["Exercice"] <= annee_max)
                    
     pivot = df_temp[serie_filtre].pivot_table(index=["Exercice", "Code Insee 2024 Département", "Nom 2024 Département"], columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
@@ -157,17 +166,19 @@ def comparer_departement_strate(df, code_dep):
     
     return fig, df_final
 
-def comparer_departement_strate_metro(df, code_dep):
+def comparer_departement_strate_metro(df, code_dep, intervalle_annees):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
     code_dep = str(code_dep)
+    annee_min, annee_max = intervalle_annees
     
     df_dep_cible = df_temp[df_temp["Code Insee 2024 Département"] == code_dep]
     strate = df_dep_cible["Strate population 2024"].iloc[0]
     nom_dep = df_dep_cible["Nom 2024 Département"].iloc[0]
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & \
-                   ((df_temp["Outre-mer"] == "Non") | (df_temp["Code Insee 2024 Département"] == code_dep))
+                   ((df_temp["Outre-mer"] == "Non") | (df_temp["Code Insee 2024 Département"] == code_dep)) & \
+                   (df_temp["Exercice"] >= annee_min) & (df_temp["Exercice"] <= annee_max)
                    
     pivot = df_temp[serie_filtre].pivot_table(index=["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Strate population 2024", "Outre-mer"], columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
@@ -260,8 +271,11 @@ elif menu == "Comparaison d'indicateurs financiers entre 2 départements":
     with col2:
         dep2 = st.selectbox("Second département :", liste_deps, index=1)
         
+    annees_sel = st.slider("Sélectionnez l'intervalle des années (Exercices) :", 
+                           min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
+        
     if st.button("Lancer la comparaison"):
-        fig, data = comparer_departements(df_main, dep1, dep2)
+        fig, data = comparer_departements(df_main, dep1, dep2, annees_sel)
         st.pyplot(fig)
         st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
@@ -269,9 +283,12 @@ elif menu == "Comparaison d'indicateurs financiers entre 2 départements":
 elif menu == "Comparaison d'indicateurs financiers entre un département et la moyenne de sa strate":
     st.header("📈 Comparaison d'un département à sa strate")
     dep = st.selectbox("Sélectionnez le département :", liste_deps)
+    
+    annees_sel = st.slider("Sélectionnez l'intervalle des années (Exercices) :", 
+                           min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
         
     if st.button("Générer l'analyse"):
-        fig, data = comparer_departement_strate(df_main, dep)
+        fig, data = comparer_departement_strate(df_main, dep, annees_sel)
         st.pyplot(fig)
         st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
@@ -279,9 +296,13 @@ elif menu == "Comparaison d'indicateurs financiers entre un département et la m
 elif menu == "Comparaison d'indicateurs financiers entre un département, la moyenne de sa strate et la moyenne de la métropole":
     st.header("🏢 Comparaison : Département VS Strate VS Métropole")
     dep = st.selectbox("Sélectionnez le département :", liste_deps)
+    
+    annees_sel = st.slider("Sélectionnez l'intervalle des années (Exercices) :", 
+                           min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
         
     if st.button("Générer l'analyse complète"):
-        fig, data = comparer_departement_strate_metro(df_main, dep)
+        fig, data = comparer_departement_strate_metro(df_main, dep, annees_sel)
         st.pyplot(fig)
         st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
+        
