@@ -35,24 +35,23 @@ def generer_graphiques(df_plot, titre):
     
     # Graphique 2 : épargne nette
     sns.lineplot(data=df_plot, x="Exercice", y="Epargne nette (M€)", hue="Nom 2024 Département", marker="o", ax=axes[0, 1], linewidth=3)
-    axes[0, 1].set_title("Épargne Nette (M€)")
+    axes[0, 1].set_title("Épargne Nette (M€)", fontsize=15, fontweight="semibold")
     axes[0, 1].set_xticks(df_plot["Exercice"].unique())
 
-    # Graphique 3 : capacité de désendettement (= encours de dette / épargne brute)
+    # Graphique 3 : capacité de désendettement
     sns.lineplot(data=df_plot, x="Exercice", y="Capacité de désendettement (années)", hue="Nom 2024 Département", marker="o", ax=axes[1, 0], linewidth=3)
-    axes[1, 0].set_title("Capacité de désendettement (années)")
+    axes[1, 0].set_title("Capacité de désendettement (années)", fontsize=15, fontweight="semibold")
     axes[1, 0].axhline(12, color="darkred", linestyle="--", linewidth=1, label="Surendettement avéré (à réduire)")
     axes[1, 0].axhline(9, color="red", linestyle="--", linewidth=1, label="Surendettement trop élevé (à réduire)")
     axes[1, 0].axhline(6, color="darkorange", linestyle="--", linewidth=1, label="Surendettement élevé (à résorber)")
     axes[1, 0].axhline(3, color="green", linestyle="--", linewidth=1, label="Endettement maîtrisé (à maintenir)")
     axes[1, 0].set_xticks(df_plot["Exercice"].unique())
-
-        
+    
     ajouter_etiquettes_desendettement(axes[1, 0], df_plot)
 
-    # Graphique 4 : Poids des AIS
+    # Graphique 4 : poids des AIS
     sns.lineplot(data=df_plot, x="Exercice", y="Poids des AIS (%)", hue="Nom 2024 Département", marker="o", ax=axes[1, 1], linewidth=3)
-    axes[1, 1].set_title("Poids des dépenses sociales (AIS) (%)")
+    axes[1, 1].set_title("Poids des dépenses sociales (AIS, en %)", fontsize=15, fontweight="semibold")
     axes[1, 1].set_xticks(df_plot["Exercice"].unique())
 
     plt.tight_layout()
