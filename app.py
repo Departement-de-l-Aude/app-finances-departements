@@ -1,17 +1,15 @@
-# -*- coding: utf-8 -*-
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import streamlit as st
 
-# --- 1. CONFIGURATION DE LA PAGE WEB ---
-st.set_page_config(page_title="Analyse Financière Départementale", layout="wide", page_icon="📊")
+# CONFIGURATION DE LA PAGE WEB
+st.set_page_config(page_title="Analyse Financière Départementale", page_icon="📊")
 
 # --- 2. CHARGEMENT DES DONNÉES ---
 @st.cache_data
 def load_data():
-    # Gardez ".zip" si vos données Streamlit sont zippées, sinon remplacez par ".csv"
     return pd.read_csv("ofgl-base-departements.zip", sep=",", low_memory=False)
 
 try:
