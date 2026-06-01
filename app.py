@@ -46,7 +46,7 @@ def generer_graphiques(df_plot, titre):
     axes[1, 0].axhline(6, color="darkorange", linestyle="--", linewidth=1, label="Surendettement élevé (à résorber)")
     axes[1, 0].axhline(3, color="green", linestyle="--", linewidth=1, label="Endettement maîtrisé (à maintenir)")
     axes[1, 0].set_xticks(df_plot["Exercice"].unique())
-    axes[1, 0].legend(loc='upper right', fontsize='small')
+
         
     ajouter_etiquettes_desendettement(axes[1, 0], df_plot)
 
