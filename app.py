@@ -7,44 +7,27 @@ import streamlit as st
 # Configuration page web
 st.set_page_config(page_title="Analyse financière départementale", page_icon="📊")
 
-# --- 2. CHARGEMENT DES DONNÉES ---
+# Chargement données et on les garde en mémoire vive
 @st.cache_data
 def load_data():
     return pd.read_csv("ofgl-base-departements.zip", sep=",", low_memory=False)
 
+# Prévention d'erreurs, je ne le fais pas habituellement mais pour un code
+# "pro", c'est intéressant
 try:
     df_main = load_data()
 except FileNotFoundError:
-    st.error("Le fichier 'ofgl-base-departements.zip' est introuvable. Placez-le dans le même dossier que ce script.")
+    st.error("Le fichier 'ofgl-base-departements.zip' est introuvable. Contactez l'administrateur du site.")
     st.stop()
 
-# --- RÉCUPÉRATION DES ANNÉES MIN ET MAX ---
+# On stocke les variables min_annee et max_annee
 min_annee = int(df_main["Exercice"].min())
 max_annee = int(df_main["Exercice"].max())
 
-
-# --- 3. FONCTIONS AUXILIAIRES GRAPHIQUES (Pour ne pas se répéter !) ---
-
-def ajouter_etiquettes_desendettement(ax, df_donnees):
-    """Ajoute les étiquettes avec les vraies valeurs pour la capacité de désendettement"""
-    for index, row in df_donnees.iterrows():
-        if row["Capacité de désendettement (années)"] == 0:
-            vraie_valeur = row["Capacité de désendettement (vraie)"]
-            if pd.isna(vraie_valeur) or np.isinf(vraie_valeur):
-                texte = "inf"
-            else:
-                texte = f"{vraie_valeur:.1f}"
-            
-            ax.annotate(
-                texte, xy=(row["Exercice"], 0), xytext=(0, 10),
-                textcoords="offset points", ha="center", va="bottom",
-                fontsize=9, color="white", fontweight="bold",
-                bbox=dict(boxstyle="round,pad=0.3", fc="black", ec="none", alpha=0.7)
-            )
-
+# Foncition de génération des graphiques
 def generer_graphiques(df_plot, titre):
     """Génère les 4 graphiques standardisés pour éviter la répétition de code."""
-    fig, axes = plt.subplots(2, 2, figsize=(14,8))
+    fig, axes = plt.subplots(2, 2)
     fig.suptitle(titre, fontsize=25, fontweight="bold", y=0.98)
 
     # Graphique 1 : Épargne brute
@@ -79,6 +62,25 @@ def generer_graphiques(df_plot, titre):
 
     plt.tight_layout()
     return fig
+
+
+def ajouter_etiquettes_desendettement(ax, df_donnees):
+    """Ajoute les étiquettes avec les vraies valeurs pour la capacité de désendettement"""
+    for index, row in df_donnees.iterrows():
+        if row["Capacité de désendettement (années)"] == 0:
+            vraie_valeur = row["Capacité de désendettement (vraie)"]
+            if pd.isna(vraie_valeur) or np.isinf(vraie_valeur):
+                texte = "inf"
+            else:
+                texte = f"{vraie_valeur:.1f}"
+            
+            ax.annotate(
+                texte, xy=(row["Exercice"], 0), xytext=(0, 10),
+                textcoords="offset points", ha="center", va="bottom",
+                fontsize=9, color="white", fontweight="bold",
+                bbox=dict(boxstyle="round,pad=0.3", fc="black", ec="none", alpha=0.7)
+            )
+
 
 
 # --- 4. FONCTIONS DE TRAITEMENT DES DONNÉES ---
