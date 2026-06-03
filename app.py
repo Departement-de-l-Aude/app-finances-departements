@@ -7,6 +7,38 @@ import streamlit as st
 # Configuration page web
 st.set_page_config(page_title="Analyse financière départementale", layout="wide", page_icon="📊")
 
+# --- LISTE DES INDICATEURS ---
+INDICATEURS_CUSTOM = [
+    'Epargne brute (M€)', 
+    'Epargne nette (M€)', 
+    'Capacité de désendettement (années)', 
+    'Poids des AIS (%)'
+]
+
+AGREGATS_BRUTS = [
+    'Achats et charges externes', 'Allocations APA', 'Allocations PCH', 'Allocations RSA', 'Annuité de la dette',
+    'Attribution fonds de péreq. DMTO', 'Autres dotations de fonctionnement', 'Autres dotations et subventions',
+    "Autres dépenses d'investissement", 'Autres dépenses de fonctionnement', 'Autres impôts et taxes',
+    "Autres recettes d'investissement", 'Autres recettes de fonctionnement', 'CNSA', 'CVAE',
+    'Capacité ou besoin de financement', 'Charges financières', "Concours de l'Etat", 'Contributions aux SDIS',
+    'Crédits de trésorerie', 'DDEC', 'DMTO après péreq.', 'DMTO avant péreq.', 'Dotation globale de fonctionnement',
+    "Dépenses d'intervention", "Dépenses d'investissement", "Dépenses d'investissement hors remb",
+    "Dépenses d'équipement", 'Dépenses de fonctionnement', 'Dépenses totales', 'Dépenses totales hors remb',
+    'Dépôts au Trésor', 'Emprunts hors GAD', 'Encours de dette', 'Encours de dette - Dettes bancaires et assimilées',
+    'Encours de dette - Dépôts et cautionnements reçus', 'Epargne brute', 'Epargne brute avant travaux en régie',
+    'Epargne de gestion', 'Epargne nette', 'FCTVA', 'FMDI', 'Fiscalité reversée', 'Flux net de dette',
+    'Fonds de roulement', 'Fonds de soutien aux emprunts à risque', "Frais d'hébergement", 'Frais de personnel',
+    'Impôts et taxes', 'Impôts locaux', "Produit des cessions d'immobilisations", 'Prélèvement fonds de péreq. DMTO',
+    'Péréquations et compensations fiscales', "Recettes d'investissement", "Recettes d'investissement hors emprunts",
+    'Recettes de fonctionnement', 'Recettes totales', 'Recettes totales hors emprunts',
+    "Remboursements d'emprunts hors GAD", 'Subventions aux personnes de droit privé',
+    "Subventions d'équipement versées", 'Subventions reçues et participations', 'TICPE', 'TSCA', 'TVA',
+    'Travaux en régie', 'Variation du fonds de roulement', 'Ventes de biens et services'
+]
+
+TOUS_INDICATEURS = INDICATEURS_CUSTOM + AGREGATS_BRUTS
+
+
 # Chargement données et on les garde en mémoire vive
 @st.cache_data
 def load_data():
@@ -23,46 +55,44 @@ except FileNotFoundError:
 min_annee = int(df_main["Exercice"].min())
 max_annee = int(df_main["Exercice"].max())
 
-# Fonction de génération des graphiques
-def generer_graphiques(df_plot, titre):
+# Fonction de génération des graphiques dynamique
+def generer_graphiques(df_plot, titre, indicateurs):
     fig, axes = plt.subplots(2, 2, figsize=(16, 9))
     fig.suptitle(titre, fontsize=25, fontweight="bold", y=0.98)
 
-    # Graphique 1 : épargne brute
-    sns.lineplot(data=df_plot, x="Exercice", y="Epargne brute (M€)", hue="Nom 2024 Département", marker="o", ax=axes[0, 0], linewidth=3)
-    axes[0, 0].set_title("Épargne brute (M€)", fontsize=15, fontweight="semibold")
-    axes[0, 0].set_xticks(df_plot["Exercice"].unique())
-    
-    # Graphique 2 : épargne nette
-    sns.lineplot(data=df_plot, x="Exercice", y="Epargne nette (M€)", hue="Nom 2024 Département", marker="o", ax=axes[0, 1], linewidth=3)
-    axes[0, 1].set_title("Épargne Nette (M€)", fontsize=15, fontweight="semibold")
-    axes[0, 1].set_xticks(df_plot["Exercice"].unique())
+    # On aplatit la matrice 2x2 en une liste de 4 cases pour boucler facilement
+    axes_flat = axes.flatten()
 
-    # Graphique 3 : capacité de désendettement
-    sns.lineplot(data=df_plot, x="Exercice", y="Capacité de désendettement (années)", hue="Nom 2024 Département", marker="o", ax=axes[1, 0], linewidth=3)
-    axes[1, 0].set_title("Capacité de désendettement (années)", fontsize=15, fontweight="semibold")
-    axes[1, 0].axhline(12, color="darkred", linestyle="--", linewidth=1, label="Surendettement avéré (à réduire)")
-    axes[1, 0].axhline(9, color="red", linestyle="--", linewidth=1, label="Surendettement trop élevé (à réduire)")
-    axes[1, 0].axhline(6, color="darkorange", linestyle="--", linewidth=1, label="Surendettement élevé (à résorber)")
-    axes[1, 0].axhline(3, color="green", linestyle="--", linewidth=1, label="Endettement maîtrisé (à maintenir)")
-    axes[1, 0].set_xticks(df_plot["Exercice"].unique())
-    
-    ajouter_etiquettes_desendettement(axes[1, 0], df_plot)
-
-    # Graphique 4 : poids des AIS
-    sns.lineplot(data=df_plot, x="Exercice", y="Poids des AIS (%)", hue="Nom 2024 Département", marker="o", ax=axes[1, 1], linewidth=3)
-    axes[1, 1].set_title("Poids des dépenses sociales (AIS, en %)", fontsize=15, fontweight="semibold")
-    axes[1, 1].set_xticks(df_plot["Exercice"].unique())
+    for i, ind in enumerate(indicateurs):
+        ax = axes_flat[i]
+        
+        # Sécurité : au cas où un département n'a aucune donnée pour un agrégat précis
+        if ind not in df_plot.columns:
+            ax.set_title(f"{ind}\n(Données indisponibles)", fontsize=12, color="gray")
+            continue
+            
+        sns.lineplot(data=df_plot, x="Exercice", y=ind, hue="Nom 2024 Département", marker="o", ax=ax, linewidth=3)
+        ax.set_title(ind, fontsize=15, fontweight="semibold")
+        ax.set_xticks(df_plot["Exercice"].unique())
+        
+        # On remet le style spécifique uniquement si cet indicateur a été choisi
+        if ind == "Capacité de désendettement (années)":
+            ax.axhline(12, color="darkred", linestyle="--", linewidth=1, label="Surendettement avéré")
+            ax.axhline(9, color="red", linestyle="--", linewidth=1, label="Surendettement trop élevé")
+            ax.axhline(6, color="darkorange", linestyle="--", linewidth=1, label="Surendettement élevé")
+            ax.axhline(3, color="green", linestyle="--", linewidth=1, label="Endettement maîtrisé")
+            ajouter_etiquettes_desendettement(ax, df_plot)
+            if ax.get_legend() is not None:
+                ax.legend(loc='upper right', fontsize='small')
 
     plt.tight_layout()
     return fig
 
 
 def ajouter_etiquettes_desendettement(ax, df_donnees):
-    """Ajoute les étiquettes avec les vraies valeurs pour la capacité de désendettement"""
     for index, row in df_donnees.iterrows():
         if row["Capacité de désendettement (années)"] == 0:
-            vraie_valeur = row["Capacité de désendettement (vraie)"]
+            vraie_valeur = row.get("Capacité de désendettement (vraie)", np.nan)
             if pd.isna(vraie_valeur) or np.isinf(vraie_valeur):
                 texte = "inf"
             else:
@@ -97,7 +127,7 @@ def departements_meme_strate(df, code_dep, mm_region=False):
     df_resultat = df_resultat[df_resultat["Code Insee 2024 Département"] != code_dep]
     return df_resultat.reset_index(drop=True)
 
-def comparer_departements(df, code_dep1, code_dep2, intervalle_annees):
+def comparer_departements(df, code_dep1, code_dep2, intervalle_annees, indicateurs):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
     code_dep1, code_dep2 = str(code_dep1), str(code_dep2)
@@ -109,21 +139,26 @@ def comparer_departements(df, code_dep1, code_dep2, intervalle_annees):
                    
     pivot = df_temp[serie_filtre].pivot_table(index=["Exercice", "Nom 2024 Département"], columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
-    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row["Epargne brute"] != 0 else np.nan, axis=1)
-    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row["Epargne brute"] > 0 else 0, axis=1)
-    pivot["Epargne brute (M€)"] = pivot["Epargne brute"] / 1000000
-    pivot["Epargne nette (M€)"] = pivot["Epargne nette"] / 1000000
-    pivot["Dépenses sociales (AIS)"] = pivot[["Allocations RSA", "Allocations APA", "Allocations PCH"]].sum(axis=1)
-    pivot["Poids des AIS (%)"] = (pivot["Dépenses sociales (AIS)"] / pivot["Dépenses totales"]) * 100
+    # Calcul des indicateurs customs
+    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row.get("Epargne brute", 0) != 0 else np.nan, axis=1)
+    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row.get("Epargne brute", 0) > 0 else 0, axis=1)
+    pivot["Epargne brute (M€)"] = pivot.get("Epargne brute", 0) / 1000000
+    pivot["Epargne nette (M€)"] = pivot.get("Epargne nette", 0) / 1000000
+    pivot["Dépenses sociales (AIS)"] = pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)
+    pivot["Poids des AIS (%)"] = (pivot["Dépenses sociales (AIS)"] / pivot.get("Dépenses totales", 1)) * 100
 
-    fig = generer_graphiques(pivot, "Analyse Financière Comparative")
+    # On s'assure que les indicateurs sélectionnés existent pour ne pas faire planter Seaborn
+    for ind in indicateurs:
+        if ind not in pivot.columns:
+            pivot[ind] = np.nan
 
-    colonnes = ["Exercice", "Nom 2024 Département", "Epargne brute (M€)", "Epargne nette (M€)", "Capacité de désendettement (années)", "Poids des AIS (%)"]
+    fig = generer_graphiques(pivot, "Analyse Financière Comparative", indicateurs)
+
+    colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs
     df_final = pivot[[c for c in colonnes if c in pivot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
-    
     return fig, df_final
 
-def comparer_departement_strate(df, code_dep, intervalle_annees):
+def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
     code_dep = str(code_dep)
@@ -139,27 +174,33 @@ def comparer_departement_strate(df, code_dep, intervalle_annees):
                    
     pivot = df_temp[serie_filtre].pivot_table(index=["Exercice", "Code Insee 2024 Département", "Nom 2024 Département"], columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
-    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row["Epargne brute"] != 0 else np.nan, axis=1)
-    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row["Epargne brute"] > 0 else 0, axis=1)
-    pivot["Epargne brute (M€)"] = pivot["Epargne brute"] / 1000000
-    pivot["Epargne nette (M€)"] = pivot["Epargne nette"] / 1000000
-    pivot["Poids des AIS (%)"] = (pivot[["Allocations RSA", "Allocations APA", "Allocations PCH"]].sum(axis=1) / pivot["Dépenses totales"]) * 100
+    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row.get("Epargne brute", 0) != 0 else np.nan, axis=1)
+    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row.get("Epargne brute", 0) > 0 else 0, axis=1)
+    pivot["Epargne brute (M€)"] = pivot.get("Epargne brute", 0) / 1000000
+    pivot["Epargne nette (M€)"] = pivot.get("Epargne nette", 0) / 1000000
+    pivot["Poids des AIS (%)"] = ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses totales", 1)) * 100
+
+    for ind in indicateurs:
+        if ind not in pivot.columns:
+            pivot[ind] = np.nan
 
     df_cible = pivot[pivot["Code Insee 2024 Département"] == code_dep].copy()
     df_autres = pivot[pivot["Code Insee 2024 Département"] != code_dep].copy()
     
-    df_moyenne = df_autres.groupby("Exercice")[["Epargne brute (M€)", "Epargne nette (M€)", "Capacité de désendettement (années)", "Capacité de désendettement (vraie)", "Poids des AIS (%)"]].mean().reset_index()
+    # On calcule la moyenne des indicateurs sélectionnés + l'indicateur vrai pour les annotations
+    cols_mean = [c for c in indicateurs + ["Capacité de désendettement (vraie)"] if c in df_autres.columns]
+    df_moyenne = df_autres.groupby("Exercice")[cols_mean].mean().reset_index()
     df_moyenne["Nom 2024 Département"] = f"Moyenne Strate {strate} (hors {nom_dep})"
+    
     df_plot = pd.concat([df_cible, df_moyenne], ignore_index=True)
 
-    fig = generer_graphiques(df_plot, f"{nom_dep} VS Moyenne Strate {strate}")
+    fig = generer_graphiques(df_plot, f"{nom_dep} VS Moyenne Strate {strate}", indicateurs)
 
-    colonnes = ["Exercice", "Nom 2024 Département", "Epargne brute (M€)", "Epargne nette (M€)", "Capacité de désendettement (années)", "Poids des AIS (%)"]
+    colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs
     df_final = df_plot[[c for c in colonnes if c in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
-    
     return fig, df_final
 
-def comparer_departement_strate_metro(df, code_dep, intervalle_annees):
+def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateurs):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
     code_dep = str(code_dep)
@@ -175,30 +216,35 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees):
                    
     pivot = df_temp[serie_filtre].pivot_table(index=["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Strate population 2024", "Outre-mer"], columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
-    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row["Epargne brute"] != 0 else np.nan, axis=1)
-    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row["Epargne brute"] > 0 else 0, axis=1)
-    pivot["Epargne brute (M€)"] = pivot["Epargne brute"] / 1000000
-    pivot["Epargne nette (M€)"] = pivot["Epargne nette"] / 1000000
-    pivot["Dépenses sociales (AIS)"] = pivot[["Allocations RSA", "Allocations APA", "Allocations PCH"]].sum(axis=1)
-    pivot["Poids des AIS (%)"] = (pivot["Dépenses sociales (AIS)"] / pivot["Dépenses totales"]) * 100
+    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row.get("Epargne brute", 0) != 0 else np.nan, axis=1)
+    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda row: row["Encours de dette"] / row["Epargne brute"] if row.get("Epargne brute", 0) > 0 else 0, axis=1)
+    pivot["Epargne brute (M€)"] = pivot.get("Epargne brute", 0) / 1000000
+    pivot["Epargne nette (M€)"] = pivot.get("Epargne nette", 0) / 1000000
+    pivot["Dépenses sociales (AIS)"] = pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)
+    pivot["Poids des AIS (%)"] = (pivot["Dépenses sociales (AIS)"] / pivot.get("Dépenses totales", 1)) * 100
+
+    for ind in indicateurs:
+        if ind not in pivot.columns:
+            pivot[ind] = np.nan
 
     df_cible = pivot[pivot["Code Insee 2024 Département"] == code_dep].copy()
     
+    cols_mean = [c for c in indicateurs + ["Capacité de désendettement (vraie)"] if c in pivot.columns]
+
     df_strate = pivot[(pivot["Strate population 2024"] == strate) & (pivot["Code Insee 2024 Département"] != code_dep)].copy()
-    df_moy_strate = df_strate.groupby("Exercice")[["Epargne brute (M€)", "Epargne nette (M€)", "Capacité de désendettement (années)", "Capacité de désendettement (vraie)", "Poids des AIS (%)"]].mean().reset_index()
+    df_moy_strate = df_strate.groupby("Exercice")[cols_mean].mean().reset_index()
     df_moy_strate["Nom 2024 Département"] = f"Moyenne Strate {strate}"
 
     df_metro = pivot[pivot["Outre-mer"] == "Non"].copy()
-    df_moy_metro = df_metro.groupby("Exercice")[["Epargne brute (M€)", "Epargne nette (M€)", "Capacité de désendettement (années)", "Capacité de désendettement (vraie)", "Poids des AIS (%)"]].mean().reset_index()
+    df_moy_metro = df_metro.groupby("Exercice")[cols_mean].mean().reset_index()
     df_moy_metro["Nom 2024 Département"] = "Moyenne Métropole"
     
     df_plot = pd.concat([df_cible, df_moy_strate, df_moy_metro], ignore_index=True)
 
-    fig = generer_graphiques(df_plot, f"{nom_dep} VS Strate {strate} VS Métropole")
+    fig = generer_graphiques(df_plot, f"{nom_dep} VS Strate {strate} VS Métropole", indicateurs)
 
-    colonnes = ["Exercice", "Nom 2024 Département", "Epargne brute (M€)", "Epargne nette (M€)", "Capacité de désendettement (années)", "Poids des AIS (%)"]
+    colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs
     df_final = df_plot[[c for c in colonnes if c in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
-    
     return fig, df_final 
 
 
@@ -210,7 +256,6 @@ st.markdown("Bienvenue dans l'interface d'analyse. Choisissez une fonctionnalit�
 # Liste des départements pour les menus déroulants
 liste_deps = sorted(df_main["Code Insee 2024 Département"].astype(str).unique())
 
-# Ajout du style CSS pour espacer les options
 st.markdown("""
     <style>
     div[role="radiogroup"] > label {
@@ -220,10 +265,24 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- CRÉATION DU MENU ---
+# --- CRÉATION DU MENU ET SÉLECTION DES INDICATEURS ---
 
 st.sidebar.markdown(
-    "<h3 style='font-size: 22px; font-weight: bold; margin-bottom: 25px;'>Quelles sont les données qui vous intéressent ?</h3>", 
+    "<h3 style='font-size: 22px; font-weight: bold; margin-bottom: 10px;'>Paramètres Globaux</h3>", 
+    unsafe_allow_html=True
+)
+
+# Ajout du multi-select pour choisir les graphiques
+indicateurs_choisis = st.sidebar.multiselect(
+    "Choisissez exactement 4 indicateurs à visualiser :",
+    options=TOUS_INDICATEURS,
+    default=INDICATEURS_CUSTOM,
+    max_selections=4
+)
+
+st.sidebar.markdown("<hr>", unsafe_allow_html=True)
+st.sidebar.markdown(
+    "<h3 style='font-size: 22px; font-weight: bold; margin-bottom: 25px;'>Fonctionnalités</h3>", 
     unsafe_allow_html=True
 )
 
@@ -239,6 +298,14 @@ menu = st.sidebar.radio(
 )
 
 st.write("---")
+
+# Sécurité : vérifier que 4 indicateurs sont bien sélectionnés
+if menu != "Recherche départements de même strate" and len(indicateurs_choisis) != 4:
+    st.warning("⚠️ Veuillez sélectionner **exactement 4 indicateurs** dans le panneau latéral de gauche pour générer les graphiques.")
+    st.stop()
+
+
+# --- CORPS DE LA PAGE SELON LE MENU ---
 
 if menu == "Recherche départements de même strate":
     st.header("🔍 Départements de même strate")
@@ -268,7 +335,7 @@ elif menu == "Comparaison d'indicateurs financiers entre 2 départements":
                            min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
         
     if st.button("Lancer la comparaison"):
-        fig, data = comparer_departements(df_main, dep1, dep2, annees_sel)
+        fig, data = comparer_departements(df_main, dep1, dep2, annees_sel, indicateurs_choisis)
         st.pyplot(fig)
         st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
@@ -281,7 +348,7 @@ elif menu == "Comparaison d'indicateurs financiers entre un département et la m
                            min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
         
     if st.button("Générer l'analyse"):
-        fig, data = comparer_departement_strate(df_main, dep, annees_sel)
+        fig, data = comparer_departement_strate(df_main, dep, annees_sel, indicateurs_choisis)
         st.pyplot(fig)
         st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
@@ -294,7 +361,7 @@ elif menu == "Comparaison d'indicateurs financiers entre un département, la moy
                            min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
         
     if st.button("Générer l'analyse complète"):
-        fig, data = comparer_departement_strate_metro(df_main, dep, annees_sel)
+        fig, data = comparer_departement_strate_metro(df_main, dep, annees_sel, indicateurs_choisis)
         st.pyplot(fig)
         st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
