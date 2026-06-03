@@ -23,7 +23,7 @@ st.set_page_config(page_title="Analyse financière départementale", layout="wid
 
 
 
-# Indicateurs par défaut
+# Indicateurs que l'on code
 indicateurs_fait_main = [
     "Capacité de désendettement (années)", 
     "Poids des AIS (%)"
@@ -48,7 +48,7 @@ def generer_graphiques(df_plot, titre, indicateurs):
     for i, ind in enumerate(indicateurs):
         ax = axes_flat[i]
         
-        # Prévention d'erreurs (normalement le fichier ofgl n'a pas de "trous" mais on ne sait jamais dans les prochains documents ofgl)
+        # Prévention d'erreurs (normalement le fichier ofgl n'a pas de "trous" mais on ne sait jamais dans les futurs documents ofgl)
         if ind not in df_plot.columns:
             ax.set_title(f"{ind}\n(Données indisponibles)", fontsize=12, color="gray")
             continue
@@ -65,7 +65,7 @@ def generer_graphiques(df_plot, titre, indicateurs):
             ax.axhline(3, color="green", linestyle="--", linewidth=1, label="Endettement maîtrisé")
             ajouter_etiquettes_desendettement(ax, df_plot)
             if ax.get_legend() is not None:
-                ax.legend(loc='upper right', fontsize='small')
+                ax.legend(loc="best", fontsize="small")
 
     plt.tight_layout()
     return fig
