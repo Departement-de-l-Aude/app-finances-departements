@@ -4,6 +4,8 @@ import seaborn as sns
 import numpy as np
 import streamlit as st
 
+
+
 # Chargement données et on les garde en mémoire vive
 @st.cache_data
 def load_data():
@@ -36,6 +38,8 @@ indiacteurs = sorted(list(set(indicateurs_fait_main + liste_agregats)))
 # On stocke les variables min_annee et max_annee
 min_annee = int(df["Exercice"].min())
 max_annee = int(df["Exercice"].max())
+
+
 
 # Fonction de génération des graphiques dynamique
 def generer_graphiques(df_plot, titre, indicateurs):
@@ -71,6 +75,7 @@ def generer_graphiques(df_plot, titre, indicateurs):
     return fig
 
 
+
 def ajouter_etiquettes_desendettement(ax, df_donnees):
     for index, row in df_donnees.iterrows():
         if row.get("Capacité de désendettement (années)", -1) == 0:
@@ -88,8 +93,10 @@ def ajouter_etiquettes_desendettement(ax, df_donnees):
             )
 
 
-# --- 4. FONCTIONS DE TRAITEMENT DES DONNÉES ---
 
+# Nos fonctions correspondant aux différentes fonctionalités du site
+
+# La première
 def departements_meme_strate(df, code_dep, mm_region=False):
     df_temp = df.copy()
     code_dep = str(code_dep)
@@ -110,6 +117,7 @@ def departements_meme_strate(df, code_dep, mm_region=False):
     return df_resultat.reset_index(drop=True)
 
 
+# La deuxième
 def comparer_departements(df, code_dep1, code_dep2, intervalle_annees, indicateurs):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
@@ -141,6 +149,7 @@ def comparer_departements(df, code_dep1, code_dep2, intervalle_annees, indicateu
     return fig, df_final
 
 
+# La troisième
 def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, meme_region=False):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
@@ -192,6 +201,7 @@ def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, me
     return fig, df_final
 
 
+# La quatrième
 def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateurs, meme_region=False):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
@@ -246,6 +256,7 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
     colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs
     df_final = df_plot[[c for c in colonnes if c in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
     return fig, df_final 
+
 
 
 # --- 5. L'INTERFACE GRAPHIQUE UTILISATEUR (STREAMLIT) ---
