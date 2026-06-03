@@ -24,16 +24,14 @@ st.set_page_config(page_title="Analyse financière départementale", layout="wid
 
 
 # Indicateurs par défaut
-indicateurs_defaut = [
-    "Epargne brute (M€)", 
-    "Epargne nette (M€)", 
+indicateurs_fait_main = [
     "Capacité de désendettement (années)", 
     "Poids des AIS (%)"
 ]
 
 liste_agregats = [elt for elt in df["Agrégat"]]
 
-indiacteurs = sorted(list(set(indicateurs_defaut + liste_agregats)))
+indiacteurs = sorted(list(set(indicateurs_fait_main + liste_agregats)))
 
 # On stocke les variables min_annee et max_annee
 min_annee = int(df["Exercice"].min())
@@ -50,7 +48,7 @@ def generer_graphiques(df_plot, titre, indicateurs):
     for i, ind in enumerate(indicateurs):
         ax = axes_flat[i]
         
-        # Sécurité : au cas où un département n'a aucune donnée pour un agrégat précis
+        # Prévention d'erreurs (normalement le fichier ofgl n'a pas de "trous" mais on ne sait jamais dans les prochains documents ofgl)
         if ind not in df_plot.columns:
             ax.set_title(f"{ind}\n(Données indisponibles)", fontsize=12, color="gray")
             continue
@@ -59,7 +57,7 @@ def generer_graphiques(df_plot, titre, indicateurs):
         ax.set_title(ind, fontsize=15, fontweight="semibold")
         ax.set_xticks(df_plot["Exercice"].unique())
         
-        # On remet le style spécifique uniquement si cet indicateur a été choisi
+        # On avait rajouté un style spécifique pour la capacité d'endettement (avant de pouvoir choisir n'importe quelle donnée à afficher)
         if ind == "Capacité de désendettement (années)":
             ax.axhline(12, color="darkred", linestyle="--", linewidth=1, label="Surendettement avéré")
             ax.axhline(9, color="red", linestyle="--", linewidth=1, label="Surendettement trop élevé")
@@ -278,7 +276,7 @@ st.sidebar.markdown(
 indicateurs_choisis = st.sidebar.multiselect(
     "Choisissez exactement 4 indicateurs à visualiser :",
     options=indiacteurs,
-    default=indicateurs_defaut,
+    default=indicateurs_fait_main,
     max_selections=4
 )
 
