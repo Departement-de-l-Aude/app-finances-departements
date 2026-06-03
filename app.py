@@ -7,40 +7,17 @@ import streamlit as st
 # Configuration page web
 st.set_page_config(page_title="Analyse financière départementale", layout="wide", page_icon="📊")
 
-# --- LISTE DES INDICATEURS ---
-# J'ai mis par défaut les 4 indicateurs dont tu as besoin (2 d'épargne et les 2 fameuses taxes)
-INDICATEURS_CUSTOM = [
-    'Epargne brute (M€)', 
-    'Epargne nette (M€)', 
-    'TVA', 
-    'DMTO après péreq.'
+# Indicateurs par défaut
+indicateurs_defaut = [
+    "Epargne brute (M€)", 
+    "Epargne nette (M€)", 
+    "Capacité de désendettement (années)", 
+    "Poids des AIS (%)"
 ]
 
-AGREGATS_BRUTS = [
-    'Achats et charges externes', 'Allocations APA', 'Allocations PCH', 'Allocations RSA', 'Annuité de la dette',
-    'Attribution fonds de péreq. DMTO', 'Autres dotations de fonctionnement', 'Autres dotations et subventions',
-    "Autres dépenses d'investissement", 'Autres dépenses de fonctionnement', 'Autres impôts et taxes',
-    "Autres recettes d'investissement", 'Autres recettes de fonctionnement', 'CNSA', 'CVAE',
-    'Capacité ou besoin de financement', 'Charges financières', "Concours de l'Etat", 'Contributions aux SDIS',
-    'Crédits de trésorerie', 'DDEC', 'DMTO après péreq.', 'DMTO avant péreq.', 'Dotation globale de fonctionnement',
-    "Dépenses d'intervention", "Dépenses d'investissement", "Dépenses d'investissement hors remb",
-    "Dépenses d'équipement", 'Dépenses de fonctionnement', 'Dépenses totales', 'Dépenses totales hors remb',
-    'Dépôts au Trésor', 'Emprunts hors GAD', 'Encours de dette', 'Encours de dette - Dettes bancaires et assimilées',
-    'Encours de dette - Dépôts et cautionnements reçus', 'Epargne brute', 'Epargne brute avant travaux en régie',
-    'Epargne de gestion', 'Epargne nette', 'FCTVA', 'FMDI', 'Fiscalité reversée', 'Flux net de dette',
-    'Fonds de roulement', 'Fonds de soutien aux emprunts à risque', "Frais d'hébergement", 'Frais de personnel',
-    'Impôts et taxes', 'Impôts locaux', "Produit des cessions d'immobilisations", 'Prélèvement fonds de péreq. DMTO',
-    'Péréquations et compensations fiscales', "Recettes d'investissement", "Recettes d'investissement hors emprunts",
-    'Recettes de fonctionnement', 'Recettes totales', 'Recettes totales hors emprunts',
-    "Remboursements d'emprunts hors GAD", 'Subventions aux personnes de droit privé',
-    "Subventions d'équipement versées", 'Subventions reçues et participations', 'TICPE', 'TSCA', 'TVA',
-    'Travaux en régie', 'Variation du fonds de roulement', 'Ventes de biens et services',
-    'Capacité de désendettement (années)', 'Poids des AIS (%)'
-]
+liste_agregats = [elt for elt in df["Agrégat"]]
 
-# Fusion des listes en évitant les doublons
-TOUS_INDICATEURS = list(set(INDICATEURS_CUSTOM + AGREGATS_BRUTS))
-TOUS_INDICATEURS.sort()
+indiacteurs = sorted(list(set(indicateurs_defaut + liste_agregats)))
 
 # Chargement données et on les garde en mémoire vive
 @st.cache_data
@@ -63,7 +40,7 @@ def generer_graphiques(df_plot, titre, indicateurs):
     fig, axes = plt.subplots(2, 2, figsize=(16, 9))
     fig.suptitle(titre, fontsize=25, fontweight="bold", y=0.98)
 
-    # On aplatit la matrice 2x2 en une liste de 4 cases pour boucler facilement
+    # On aplatit la matrice 2x2 en une liste de 4 cases pour boucler plus facilement
     axes_flat = axes.flatten()
 
     for i, ind in enumerate(indicateurs):
@@ -296,8 +273,8 @@ st.sidebar.markdown(
 # Ajout du multi-select pour choisir les graphiques
 indicateurs_choisis = st.sidebar.multiselect(
     "Choisissez exactement 4 indicateurs à visualiser :",
-    options=TOUS_INDICATEURS,
-    default=INDICATEURS_CUSTOM,
+    options=indiacteurs,
+    default=indicateurs_defaut,
     max_selections=4
 )
 
