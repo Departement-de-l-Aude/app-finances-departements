@@ -78,18 +78,18 @@ def generer_graphiques(df_plot, titre, indicateurs):
 
 def ajouter_etiquettes_desendettement(ax, df_donnees):
     for index, row in df_donnees.iterrows():
-        if row.get("Capacité de désendettement (années)", -1) == 0:
-            vraie_valeur = row.get("Capacité de désendettement (vraie)", np.nan)
+        if row["Capacité de désendettement (années)", -1] == 0:
+            vraie_valeur = row["Capacité de désendettement (vraie)", np.nan]
             if pd.isna(vraie_valeur) or np.isinf(vraie_valeur):
-                texte = "inf"
+                vraie_valeur_texte = "inf"
             else:
-                texte = f"{vraie_valeur:.1f}"
+                vraie_valeur_texte = f"{vraie_valeur:.1f}"
             
             ax.annotate(
-                texte, xy=(row["Exercice"], 0), xytext=(0, 10),
+                vraie_valeur_texte, xy=(row["Exercice"], 0), xytext=(0, 10),
                 textcoords="offset points", ha="center", va="bottom",
-                fontsize=9, color="white", fontweight="bold",
-                bbox=dict(boxstyle="round,pad=0.3", fc="black", ec="none", alpha=0.7)
+                fontsize=10, color="white", fontweight="bold",
+                bbox=dict(boxstyle="round,pad=0.5", fc="black", ec="none", alpha=0.75, edgecolor="red")
             )
 
 
@@ -256,6 +256,17 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
     colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs
     df_final = df_plot[[c for c in colonnes if c in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
     return fig, df_final 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
