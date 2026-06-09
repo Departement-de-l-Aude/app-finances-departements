@@ -31,9 +31,26 @@ indicateurs_fait_main = [
     "Poids des AIS (%)"
 ]
 
+# --- NOUVEAU : Fonction de catégorisation ---
+def categoriser_indicateur(ind):
+    ind_l = ind.lower()
+    if any(x in ind_l for x in ["épargne", "epargne", "désendettement", "fonds de roulement", "financement", "besoin"]):
+        return "1️⃣ Épargne & Résultats"
+    elif any(x in ind_l for x in ["recette", "dotation", "impôt", "taxe", "tva", "dmto", "cvae", "ticpe", "tsca", "fiscal", "fctva", "fmdi", "péreq", "compensation", "vente", "produit"]):
+        return "2️⃣ Recettes & Fiscalité"
+    elif any(x in ind_l for x in ["dépense", "achat", "frais", "subvention", "personnel", "sdis", "ddec", "travaux", "charge", "intervention"]):
+        return "3️⃣ Dépenses"
+    elif any(x in ind_l for x in ["allocation", "ais", "cnsa", "hébergement", "social"]):
+        return "4️⃣ Social & Solidarité"
+    elif any(x in ind_l for x in ["dette", "emprunt", "trésorerie", "financière", "financier", "gad", "annuité"]):
+        return "5️⃣ Dette & Trésorerie"
+    else:
+        return "6️⃣ Autres"
+
 liste_agregats = [elt for elt in df["Agrégat"]]
 
-indiacteurs = sorted(list(set(indicateurs_fait_main + liste_agregats)))
+# Tri personnalisé par catégorie puis par ordre alphabétique
+indiacteurs = sorted(list(set(indicateurs_fait_main + liste_agregats)), key=lambda x: (categoriser_indicateur(x), x))
 
 # On stocke les variables min_annee et max_annee
 min_annee = int(df["Exercice"].min())
@@ -244,7 +261,7 @@ def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, me
     
     df_plot = pd.concat([df_cible, df_moyenne], ignore_index=True)
 
-    fig = generer_graphiques(df_plot, f"{nom_dep} VS Moyenne Strate {strate}", indicateurs_a_tracer, par_habitant and not afficher_les_deux, afficher_les_deux)
+    fig = generer_graphiques(df_plot, f"{nom_dep} comparé à la moyenne de sa strate", indicateurs_a_tracer, par_habitant and not afficher_les_deux, afficher_les_deux)
 
     colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
     df_final = df_plot[[c for c in colonnes if c in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
@@ -319,7 +336,7 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
     
     df_plot = pd.concat([df_cible, df_moy_strate, df_moy_metro], ignore_index=True)
 
-    fig = generer_graphiques(df_plot, f"{nom_dep} VS Strate {strate} VS Métropole", indicateurs_a_tracer, par_habitant and not afficher_les_deux, afficher_les_deux)
+    fig = generer_graphiques(df_plot, f"{nom_dep} comparé à la moyenne de sa strate et à la moyenne de la métropole", indicateurs_a_tracer, par_habitant and not afficher_les_deux, afficher_les_deux)
 
     colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
     df_final = df_plot[[c for c in colonnes if c in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
@@ -354,7 +371,8 @@ st.sidebar.markdown(
 indicateurs_choisis = st.sidebar.multiselect(
     "Choisissez les indicateurs à visualiser :",
     options=indiacteurs,
-    default=indicateurs_fait_main
+    default=indicateurs_fait_main,
+    format_func=lambda x: f"{categoriser_indicateur(x)} - {x}" # <- La magie opère ici pour l'affichage visuel
 )
 
 par_habitant = st.sidebar.checkbox("Afficher les données en par habitant (€/hab)")
