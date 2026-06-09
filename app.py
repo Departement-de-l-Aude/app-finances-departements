@@ -31,6 +31,74 @@ indicateurs_fait_main = [
     "Poids des AIS (%)"
 ]
 
+# Fonction de catégorisation
+def categoriser_indicateur(ind):
+    ind_l = ind.lower()
+    if any(x in ind_l for x in ["épargne", "epargne", "désendettement", "fonds de roulement", "financement", "besoin"]):
+        return "1️⃣ Épargne & Résultats"
+    elif any(x in ind_l for x in ["recette", "dotation", "impôt", "taxe", "tva", "dmto", "cvae", "ticpe", "tsca", "fiscal", "fctva", "fmdi", "péreq", "compensation", "vente", "produit"]):
+        return "2️⃣ Recettes & Fiscalité"
+    elif any(x in ind_l for x in ["dépense", "achat", "frais", "subvention", "personnel", "sdis", "ddec", "travaux", "charge", "intervention"]):
+        return "3️⃣ Dépenses"
+    elif any(x in ind_l for x in ["allocation", "ais", "cnsa", "hébergement", "social"]):
+        return "4️⃣ Social & Solidarité"
+    elif any(x in ind_l for x in ["dette", "emprunt", "trésorerie", "financière", "financier", "gad", "annuité"]):
+        return "5️⃣ Dette & Trésorerie"
+    else:
+        return "6️⃣ Autres"
+
+liste_agregats = [elt for elt in df["Agrégat"]]
+
+# Tri personnalisé par catégorie puis alphabétique
+indiacteurs = sorted(list(set(indicateurs_fait_main + liste_agregats)), key=lambda x: (categoriser_indicateur(x), x))
+
+# On stocke les variables min_annee et max_annee
+min_annee = int(df["Exercice"].min())
+max_anneeJe comprends tout à fait. En termes d'interface utilisateur (UI), avoir tout en vrac dans un seul immense menu n'est pas idéal.
+
+Il y a cependant une contrainte technique avec Streamlit : son composant natif `st.multiselect` ne supporte pas les "sous-groupes" internes (comme on le ferait en développement web classique avec la balise HTML `<optgroup>`).
+
+**La solution élégante et "pro" pour contourner cela :** 
+Je t'ai remplacé l'unique grand menu déroulant par un **volet rétractable (Expander)** dans la barre latérale. À l'intérieur, tu as désormais une véritable séparation visuelle avec **un sous-menu par thème**. Les indicateurs choisis dans tous ces sous-menus s'additionnent automatiquement pour générer tes graphiques.
+
+J'ai bien conservé ta faute de frappe sur `indiacteurs` (ligne 48) et je n'ai touché à rien d'autre que l'interface du menu.
+
+Voici le code mis à jour :
+
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import streamlit as st
+
+
+
+# Chargement données et on les garde en mémoire vive
+@st.cache_data
+def load_data():
+    return pd.read_csv("ofgl-base-departements.zip", sep=",", low_memory=False)
+
+# Prévention d'erreurs
+try:
+    df = load_data()
+except FileNotFoundError:
+    st.error("Le fichier 'ofgl-base-departements.zip' est introuvable. Contactez l'administrateur du site.")
+    st.stop()
+
+
+
+# Configuration page web
+st.set_page_config(page_title="Analyse financière départementale", layout="wide", page_icon="📊")
+
+
+
+# Indicateurs que l'on code
+indicateurs_fait_main = [
+    "Capacité de désendettement (années)", 
+    "Poids des AIS (%)"
+]
+
 # --- Fonction de catégorisation ---
 def categoriser_indicateur(ind):
     ind_l = ind.lower()
@@ -48,22 +116,8 @@ def categoriser_indicateur(ind):
         return "6️⃣ Autres"
 
 liste_agregats = [elt for elt in df["Agrégat"]]
-tous_les_indicateurs_bruts = list(set(indicateurs_fait_main + liste_agregats))
 
-# --- Création de la liste avec séparateurs visuels pour le menu ---
-dict_categories = {}
-for ind in tous_les_indicateurs_bruts:
-    cat = categoriser_indicateur(ind)
-    if cat not in dict_categories:
-        dict_categories[cat] = []
-    dict_categories[cat].append(ind)
-
-# On garde ta variable indiacteurs avec sa faute de frappe
-indiacteurs = []
-for cat in sorted(dict_categories.keys()):
-    indiacteurs.append(f" 📂 ━━━ {cat} ━━━") # Le séparateur visuel qui sert de titre
-    for ind in sorted(dict_categories[cat]):
-        indiacteurs.append(ind)
+indiacteurs = sorted(list(set(indicateurs_fait_main + liste_agregats)))
 
 # On stocke les variables min_annee et max_annee
 min_annee = int(df["Exercice"].min())
@@ -381,15 +435,28 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-# Stockage brut des clics de l'utilisateur (incluant potentiellement les "titres")
-indicateurs_choisis_bruts = st.sidebar.multiselect(
-    "Choisissez les indicateurs à visualiser :",
-    options=indiacteurs,
-    default=indicateurs_fait_main
-)
+# On regroupe les indicateurs par catégorie pour créer les sous-menus visuels
+dict_categories = {}
+for ind in indiacteurs:
+    cat = categoriser_indicateur(ind)
+    if cat not in dict_categories:
+        dict_categories[cat] = []
+    dict_categories[cat].append(ind)
 
-# Sécurité vitale : On retire les séparateurs "📂 ━━━" de la liste des choix réels si l'utilisateur les coche
-indicateurs_choisis = [ind for ind in indicateurs_choisis_bruts if not ind.startswith(" 📂 ━━━")]
+indicateurs_choisis = []
+
+# Création du volet déroulant pour la sélection des indicateurs
+with st.sidebar.expander("📂 Choix des indicateurs par thème", expanded=True):
+    for cat in sorted(dict_categories.keys()):
+        # On définit les valeurs cochées par défaut pour cette catégorie
+        defauts_cat = [ind for ind in dict_categories[cat] if ind in indicateurs_fait_main]
+        
+        choix = st.multiselect(
+            label=cat,
+            options=dict_categories[cat],
+            default=defauts_cat
+        )
+        indicateurs_choisis.extend(choix)
 
 par_habitant = st.sidebar.checkbox("Afficher les données en par habitant (€/hab)")
 
@@ -419,7 +486,7 @@ st.write("---")
 
 # Sécurité : vérifier qu'au moins 1 indicateur est sélectionné
 if menu != "Recherche départements de même strate" and len(indicateurs_choisis) == 0:
-    st.warning("⚠️ Veuillez sélectionner **au moins 1 vrai indicateur** dans le panneau latéral de gauche pour générer les graphiques.")
+    st.warning("⚠️ Veuillez sélectionner **au moins 1 indicateur** dans le panneau latéral de gauche pour générer les graphiques.")
     st.stop()
 
 
