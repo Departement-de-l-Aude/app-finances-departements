@@ -1,4 +1,3 @@
-python
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -50,7 +49,8 @@ def categoriser_indicateur(ind):
 
 liste_agregats = [elt for elt in df["Agrégat"]]
 
-indiacteurs = sorted(list(set(indicateurs_fait_main + liste_agregats)))
+# Tri personnalisé par catégorie puis alphabétique
+indiacteurs = sorted(list(set(indicateurs_fait_main + liste_agregats)), key=lambda x: (categoriser_indicateur(x), x))
 
 # On stocke les variables min_annee et max_annee
 min_annee = int(df["Exercice"].min())
