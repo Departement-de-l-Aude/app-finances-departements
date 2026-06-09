@@ -42,15 +42,17 @@ max_annee = int(df["Exercice"].max())
 
 
 # Fonction de génération des graphiques dynamique
-def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False):
+def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher_les_deux=False):
     # Calcul dynamique des lignes et colonnes en fonction du nombre d'indicateurs
     n = len(indicateurs)
-    cols = 2 if n >= 2 else 1
+    
+    # Si on veut superposer les vues, on force 1 seule colonne pour qu'ils soient l'un au dessus de l'autre
+    cols = 1 if afficher_les_deux else (2 if n >= 2 else 1)
     rows = (n + cols - 1) // cols
     
     # La hauteur de la figure s'adapte au nombre de lignes (5 par ligne)
     fig, axes = plt.subplots(rows, cols, figsize=(16, 5 * rows))
-    fig.suptitle(titre, fontsize=25, fontweight="bold", y=1.02) # Légèrement remonté pour éviter que le titre écrase le 1er graph
+    fig.suptitle(titre, fontsize=25, fontweight="bold", y=1.02) 
 
     # On sécurise l'aplatissement (gère le fait qu'il y ait 1, 2 ou 10 graphiques)
     axes_flat = np.array(axes).flatten()
@@ -58,19 +60,18 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False):
     for i, ind in enumerate(indicateurs):
         ax = axes_flat[i]
         
-        # Prévention d'erreurs (normalement le fichier ofgl n'a pas de "trous" mais on ne sait jamais dans les futurs documents ofgl)
+        # Prévention d'erreurs
         if ind not in df_plot.columns:
             ax.set_title(f"{ind}\n(Données indisponibles)", fontsize=12, color="gray")
             continue
             
         sns.lineplot(data=df_plot, x="Exercice", y=ind, hue="Nom 2024 Département", marker="o", ax=ax, linewidth=3)
         
-        # Adaptation du titre si par_habitant est coché
-        titre_axe = f"{ind} (€/hab)" if par_habitant and ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)"] else ind
+        # Adaptation du titre si par_habitant est coché et qu'on ne les affiche pas en double (sinon le nom contient déjà la mention)
+        titre_axe = f"{ind} (€/hab)" if par_habitant and not afficher_les_deux and ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)"] else ind
         ax.set_title(titre_axe, fontsize=15, fontweight="semibold")
         ax.set_xticks(df_plot["Exercice"].unique())
         
-        # On avait rajouté un style spécifique pour la capacité d'endettement (avant de pouvoir choisir n'importe quelle donnée à afficher)
         if ind == "Capacité de désendettement (années)":
             ax.axhline(12, color="darkred", linestyle="--", linewidth=1, label="Surendettement avéré")
             ax.axhline(9, color="red", linestyle="--", linewidth=1, label="Surendettement trop élevé")
@@ -80,7 +81,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False):
             if ax.get_legend() is not None:
                 ax.legend(loc="best", fontsize="small")
 
-    # Nettoyage : si on a généré des cases vides (ex: 3 indicateurs créent une grille 2x2), on supprime la case en trop
+    # Nettoyage des cases vides (ex: 3 indicateurs sur une grille 2x2)
     for j in range(n, len(axes_flat)):
         fig.delaxes(axes_flat[j])
 
@@ -131,14 +132,13 @@ def departements_meme_strate(df, code_dep, mm_region=False):
 
 
 # La deuxième
-def comparer_departements(df, code_dep1, code_dep2, intervalle_annees, indicateurs, par_habitant=False):
+def comparer_departements(df, liste_codes_dep, intervalle_annees, indicateurs, par_habitant=False, afficher_les_deux=False):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
-    code_dep1, code_dep2 = str(code_dep1), str(code_dep2)
     annee_min, annee_max = intervalle_annees
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & \
-                   (df_temp["Code Insee 2024 Département"].isin([code_dep1, code_dep2])) & \
+                   (df_temp["Code Insee 2024 Département"].isin(liste_codes_dep)) & \
                    (df_temp["Exercice"] >= annee_min) & (df_temp["Exercice"] <= annee_max)
                    
     idx_cols = ["Exercice", "Nom 2024 Département"]
@@ -146,7 +146,6 @@ def comparer_departements(df, code_dep1, code_dep2, intervalle_annees, indicateu
 
     pivot = df_temp[serie_filtre].pivot_table(index=idx_cols, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
-    # Calcul des indicateurs customs (au cas où ils sont sélectionnés)
     pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda row: row.get("Encours de dette", 0) / row["Epargne brute"] if row.get("Epargne brute", 0) != 0 else np.nan, axis=1)
     pivot["Capacité de désendettement (années)"] = pivot.apply(lambda row: row.get("Encours de dette", 0) / row["Epargne brute"] if row.get("Epargne brute", 0) > 0 else 0, axis=1)
     pivot["Epargne brute (M€)"] = pivot.get("Epargne brute", 0) / 1000000
@@ -154,24 +153,35 @@ def comparer_departements(df, code_dep1, code_dep2, intervalle_annees, indicateu
     pivot["Dépenses sociales (AIS)"] = pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)
     pivot["Poids des AIS (%)"] = (pivot["Dépenses sociales (AIS)"] / pivot.get("Dépenses de fonctionnement", 1)) * 100
 
+    indicateurs_a_tracer = indicateurs.copy()
+    
     if par_habitant and "Population totale" in pivot.columns:
-        for ind in indicateurs:
-            if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
-                pivot[ind] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+        if afficher_les_deux:
+            indicateurs_a_tracer = []
+            for ind in indicateurs:
+                indicateurs_a_tracer.append(ind)
+                if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
+                    nom_hab = f"{ind} (€/hab)"
+                    pivot[nom_hab] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+                    indicateurs_a_tracer.append(nom_hab)
+        else:
+            for ind in indicateurs:
+                if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
+                    pivot[ind] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
 
-    for ind in indicateurs:
+    for ind in indicateurs_a_tracer:
         if ind not in pivot.columns:
             pivot[ind] = np.nan
 
-    fig = generer_graphiques(pivot, "Analyse Financière Comparative", indicateurs, par_habitant)
+    fig = generer_graphiques(pivot, "Analyse Financière Comparative", indicateurs_a_tracer, par_habitant and not afficher_les_deux, afficher_les_deux)
 
-    colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs
+    colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
     df_final = pivot[[c for c in colonnes if c in pivot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
     return fig, df_final
 
 
 # La troisième
-def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, meme_region=False, par_habitant=False):
+def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, meme_region=False, par_habitant=False, afficher_les_deux=False):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
     code_dep = str(code_dep)
@@ -180,13 +190,12 @@ def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, me
     df_dep_cible = df_temp[df_temp["Code Insee 2024 Département"] == code_dep]
     strate = df_dep_cible["Strate population 2024"].iloc[0]
     nom_dep = df_dep_cible["Nom 2024 Département"].iloc[0]
-    region = df_dep_cible["Nom 2024 Région"].iloc[0] # Récupération de la région
+    region = df_dep_cible["Nom 2024 Région"].iloc[0]
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & \
                    (df_temp["Strate population 2024"] == strate) & \
                    (df_temp["Exercice"] >= annee_min) & (df_temp["Exercice"] <= annee_max)
                    
-    # On ajoute la région dans l'index du pivot_table pour pouvoir filtrer plus tard
     idx_cols = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Nom 2024 Région"]
     if "Population totale" in df_temp.columns: idx_cols.append("Population totale")
 
@@ -198,40 +207,49 @@ def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, me
     pivot["Epargne nette (M€)"] = pivot.get("Epargne nette", 0) / 1000000
     pivot["Poids des AIS (%)"] = ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100
 
+    indicateurs_a_tracer = indicateurs.copy()
+    
     if par_habitant and "Population totale" in pivot.columns:
-        for ind in indicateurs:
-            if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
-                pivot[ind] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+        if afficher_les_deux:
+            indicateurs_a_tracer = []
+            for ind in indicateurs:
+                indicateurs_a_tracer.append(ind)
+                if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
+                    nom_hab = f"{ind} (€/hab)"
+                    pivot[nom_hab] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+                    indicateurs_a_tracer.append(nom_hab)
+        else:
+            for ind in indicateurs:
+                if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
+                    pivot[ind] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
 
-    for ind in indicateurs:
+    for ind in indicateurs_a_tracer:
         if ind not in pivot.columns:
             pivot[ind] = np.nan
 
     df_cible = pivot[pivot["Code Insee 2024 Département"] == code_dep].copy()
     df_autres = pivot[pivot["Code Insee 2024 Département"] != code_dep].copy()
     
-    # Filtre sur la région si la case a été cochée
     if meme_region:
         df_autres = df_autres[df_autres["Nom 2024 Région"] == region]
 
-    cols_mean = [c for c in indicateurs + ["Capacité de désendettement (vraie)"] if c in df_autres.columns]
+    cols_mean = [c for c in indicateurs_a_tracer + ["Capacité de désendettement (vraie)"] if c in df_autres.columns]
     df_moyenne = df_autres.groupby("Exercice")[cols_mean].mean().reset_index()
     
-    # Label dynamique selon le filtre de région
     label_moyenne = f"Moyenne Strate {strate}" + (" (même région)" if meme_region else " (France)")
     df_moyenne["Nom 2024 Département"] = label_moyenne
     
     df_plot = pd.concat([df_cible, df_moyenne], ignore_index=True)
 
-    fig = generer_graphiques(df_plot, f"{nom_dep} VS Moyenne Strate {strate}", indicateurs, par_habitant)
+    fig = generer_graphiques(df_plot, f"{nom_dep} VS Moyenne Strate {strate}", indicateurs_a_tracer, par_habitant and not afficher_les_deux, afficher_les_deux)
 
-    colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs
+    colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
     df_final = df_plot[[c for c in colonnes if c in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
     return fig, df_final
 
 
 # La quatrième
-def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateurs, meme_region=False, par_habitant=False):
+def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateurs, meme_region=False, par_habitant=False, afficher_les_deux=False):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
     code_dep = str(code_dep)
@@ -240,13 +258,12 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
     df_dep_cible = df_temp[df_temp["Code Insee 2024 Département"] == code_dep]
     strate = df_dep_cible["Strate population 2024"].iloc[0]
     nom_dep = df_dep_cible["Nom 2024 Département"].iloc[0]
-    region = df_dep_cible["Nom 2024 Région"].iloc[0] # Récupération de la région
+    region = df_dep_cible["Nom 2024 Région"].iloc[0]
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & \
                    ((df_temp["Outre-mer"] == "Non") | (df_temp["Code Insee 2024 Département"] == code_dep)) & \
                    (df_temp["Exercice"] >= annee_min) & (df_temp["Exercice"] <= annee_max)
                    
-    # On ajoute la région dans l'index du pivot_table
     idx_cols = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Strate population 2024", "Outre-mer", "Nom 2024 Région"]
     if "Population totale" in df_temp.columns: idx_cols.append("Population totale")
 
@@ -258,21 +275,31 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
     pivot["Epargne nette (M€)"] = pivot.get("Epargne nette", 0) / 1000000
     pivot["Poids des AIS (%)"] = ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100
 
+    indicateurs_a_tracer = indicateurs.copy()
+    
     if par_habitant and "Population totale" in pivot.columns:
-        for ind in indicateurs:
-            if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
-                pivot[ind] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+        if afficher_les_deux:
+            indicateurs_a_tracer = []
+            for ind in indicateurs:
+                indicateurs_a_tracer.append(ind)
+                if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
+                    nom_hab = f"{ind} (€/hab)"
+                    pivot[nom_hab] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+                    indicateurs_a_tracer.append(nom_hab)
+        else:
+            for ind in indicateurs:
+                if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
+                    pivot[ind] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
 
-    for ind in indicateurs:
+    for ind in indicateurs_a_tracer:
         if ind not in pivot.columns:
             pivot[ind] = np.nan
 
     df_cible = pivot[pivot["Code Insee 2024 Département"] == code_dep].copy()
-    cols_mean = [c for c in indicateurs + ["Capacité de désendettement (vraie)"] if c in pivot.columns]
+    cols_mean = [c for c in indicateurs_a_tracer + ["Capacité de désendettement (vraie)"] if c in pivot.columns]
 
     df_strate = pivot[(pivot["Strate population 2024"] == strate) & (pivot["Code Insee 2024 Département"] != code_dep)].copy()
     
-    # Filtre sur la région pour la moyenne de la strate si la case a été cochée
     if meme_region:
         df_strate = df_strate[df_strate["Nom 2024 Région"] == region]
 
@@ -280,29 +307,17 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
     label_moyenne = f"Moyenne Strate {strate}" + (" (même région)" if meme_region else " (France)")
     df_moy_strate["Nom 2024 Département"] = label_moyenne
 
-    # La moyenne métropole reste globale (elle ne se restreint pas à la région)
     df_metro = pivot[pivot["Outre-mer"] == "Non"].copy()
     df_moy_metro = df_metro.groupby("Exercice")[cols_mean].mean().reset_index()
     df_moy_metro["Nom 2024 Département"] = "Moyenne Métropole"
     
     df_plot = pd.concat([df_cible, df_moy_strate, df_moy_metro], ignore_index=True)
 
-    fig = generer_graphiques(df_plot, f"{nom_dep} VS Strate {strate} VS Métropole", indicateurs, par_habitant)
+    fig = generer_graphiques(df_plot, f"{nom_dep} VS Strate {strate} VS Métropole", indicateurs_a_tracer, par_habitant and not afficher_les_deux, afficher_les_deux)
 
-    colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs
+    colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
     df_final = df_plot[[c for c in colonnes if c in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
     return fig, df_final 
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -330,15 +345,18 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-# Ajout du multi-select pour choisir les graphiques
 indicateurs_choisis = st.sidebar.multiselect(
     "Choisissez les indicateurs à visualiser :",
     options=indiacteurs,
     default=indicateurs_fait_main
-    # max_selections retiré ici
 )
 
 par_habitant = st.sidebar.checkbox("Afficher les données en par habitant (€/hab)")
+
+# La mini-option conditionnelle
+afficher_les_deux = False
+if par_habitant:
+    afficher_les_deux = st.sidebar.checkbox("Afficher et superposer l'absolu ET le normalisé")
 
 st.sidebar.markdown("<hr>", unsafe_allow_html=True)
 st.sidebar.markdown(
@@ -385,20 +403,25 @@ if menu == "Recherche départements de même strate":
 
 elif menu == "Comparaison d'indicateurs financiers entre 2 départements":
     st.header("⚖️ Comparaison entre deux départements")
-    col1, col2 = st.columns(2)
-    with col1:
-        dep1 = st.selectbox("Premier département :", liste_deps, index=0)
-    with col2:
-        dep2 = st.selectbox("Second département :", liste_deps, index=1)
+    
+    # Remplacement des 2 selectbox par un multiselect pour choisir N départements
+    deps_selectionnes = st.multiselect(
+        "Sélectionnez les départements à comparer :", 
+        liste_deps, 
+        default=[liste_deps[0], liste_deps[1]] if len(liste_deps) >= 2 else liste_deps
+    )
         
     annees_sel = st.slider("Sélectionnez l'intervalle des années (Exercices) :", 
                            min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
         
     if st.button("Lancer la comparaison"):
-        fig, data = comparer_departements(df, dep1, dep2, annees_sel, indicateurs_choisis, par_habitant)
-        st.pyplot(fig)
-        st.subheader("📋 Données brutes")
-        st.dataframe(data, use_container_width=True)
+        if len(deps_selectionnes) == 0:
+            st.warning("⚠️ Veuillez sélectionner au moins un département pour lancer la comparaison.")
+        else:
+            fig, data = comparer_departements(df, deps_selectionnes, annees_sel, indicateurs_choisis, par_habitant, afficher_les_deux)
+            st.pyplot(fig)
+            st.subheader("📋 Données brutes")
+            st.dataframe(data, use_container_width=True)
 
 elif menu == "Comparaison d'indicateurs financiers entre un département et la moyenne de sa strate":
     st.header("📈 Comparaison d'un département à sa strate")
@@ -406,7 +429,7 @@ elif menu == "Comparaison d'indicateurs financiers entre un département et la m
     with col1:
         dep = st.selectbox("Sélectionnez le département :", liste_deps)
     with col2:
-        st.write("") # Espace vide pour aligner verticalement
+        st.write("") 
         st.write("")
         meme_region = st.checkbox("Restreindre la moyenne de la strate à la même région")
         
@@ -414,7 +437,7 @@ elif menu == "Comparaison d'indicateurs financiers entre un département et la m
                            min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
         
     if st.button("Générer l'analyse"):
-        fig, data = comparer_departement_strate(df, dep, annees_sel, indicateurs_choisis, meme_region, par_habitant)
+        fig, data = comparer_departement_strate(df, dep, annees_sel, indicateurs_choisis, meme_region, par_habitant, afficher_les_deux)
         st.pyplot(fig)
         st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
@@ -433,7 +456,7 @@ elif menu == "Comparaison d'indicateurs financiers entre un département, la moy
                            min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
         
     if st.button("Générer l'analyse complète"):
-        fig, data = comparer_departement_strate_metro(df, dep, annees_sel, indicateurs_choisis, meme_region, par_habitant)
+        fig, data = comparer_departement_strate_metro(df, dep, annees_sel, indicateurs_choisis, meme_region, par_habitant, afficher_les_deux)
         st.pyplot(fig)
         st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
