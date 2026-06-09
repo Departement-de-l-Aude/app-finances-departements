@@ -46,8 +46,8 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     # Calcul dynamique des lignes et colonnes en fonction du nombre d'indicateurs
     n = len(indicateurs)
     
-    # Si on veut superposer les vues, on force 1 seule colonne pour qu'ils soient l'un au dessus de l'autre
-    cols = 1 if afficher_les_deux else (2 if n >= 2 else 1)
+    # On force l'affichage à 2 colonnes maximum par ligne pour garder un beau dashboard
+    cols = 2 if n >= 2 else 1
     rows = (n + cols - 1) // cols
     
     # La hauteur de la figure s'adapte au nombre de lignes (5 par ligne)
@@ -55,7 +55,10 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     fig.suptitle(titre, fontsize=25, fontweight="bold", y=1.02) 
 
     # On sécurise l'aplatissement (gère le fait qu'il y ait 1, 2 ou 10 graphiques)
-    axes_flat = np.array(axes).flatten()
+    if rows == 1 and cols == 1:
+        axes_flat = [axes]
+    else:
+        axes_flat = axes.flatten()
 
     for i, ind in enumerate(indicateurs):
         ax = axes_flat[i]
@@ -81,7 +84,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
             if ax.get_legend() is not None:
                 ax.legend(loc="best", fontsize="small")
 
-    # Nettoyage des cases vides (ex: 3 indicateurs sur une grille 2x2)
+    # Nettoyage des cases vides (ex: 3 indicateurs sur une grille 2x2 ou 5 sur une grille 3x2)
     for j in range(n, len(axes_flat)):
         fig.delaxes(axes_flat[j])
 
@@ -258,12 +261,13 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
     df_dep_cible = df_temp[df_temp["Code Insee 2024 Département"] == code_dep]
     strate = df_dep_cible["Strate population 2024"].iloc[0]
     nom_dep = df_dep_cible["Nom 2024 Département"].iloc[0]
-    region = df_dep_cible["Nom 2024 Région"].iloc[0]
+    region = df_dep_cible["Nom 2024 Région"].iloc[0] # Récupération de la région
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & \
                    ((df_temp["Outre-mer"] == "Non") | (df_temp["Code Insee 2024 Département"] == code_dep)) & \
                    (df_temp["Exercice"] >= annee_min) & (df_temp["Exercice"] <= annee_max)
                    
+    # On ajoute la région dans l'index du pivot_table
     idx_cols = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Strate population 2024", "Outre-mer", "Nom 2024 Région"]
     if "Population totale" in df_temp.columns: idx_cols.append("Population totale")
 
@@ -300,6 +304,7 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
 
     df_strate = pivot[(pivot["Strate population 2024"] == strate) & (pivot["Code Insee 2024 Département"] != code_dep)].copy()
     
+    # Filtre sur la région pour la moyenne de la strate si la case a été cochée
     if meme_region:
         df_strate = df_strate[df_strate["Nom 2024 Région"] == region]
 
@@ -307,6 +312,7 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
     label_moyenne = f"Moyenne Strate {strate}" + (" (même région)" if meme_region else " (France)")
     df_moy_strate["Nom 2024 Département"] = label_moyenne
 
+    # La moyenne métropole reste globale (elle ne se restreint pas à la région)
     df_metro = pivot[pivot["Outre-mer"] == "Non"].copy()
     df_moy_metro = df_metro.groupby("Exercice")[cols_mean].mean().reset_index()
     df_moy_metro["Nom 2024 Département"] = "Moyenne Métropole"
@@ -368,7 +374,7 @@ menu = st.sidebar.radio(
     label="Menu caché",
     options=[
         "Recherche départements de même strate", 
-        "Comparaison d'indicateurs financiers entre 2 départements", 
+        "Comparaison d'indicateurs financiers entre plusieurs départements", 
         "Comparaison d'indicateurs financiers entre un département et la moyenne de sa strate",
         "Comparaison d'indicateurs financiers entre un département, la moyenne de sa strate et la moyenne de la métropole"
     ],
@@ -401,8 +407,8 @@ if menu == "Recherche départements de même strate":
         else:
             st.warning("Aucun résultat trouvé ou données manquantes.")
 
-elif menu == "Comparaison d'indicateurs financiers entre 2 départements":
-    st.header("⚖️ Comparaison entre deux départements")
+elif menu == "Comparaison d'indicateurs financiers entre plusieurs départements":
+    st.header("⚖️ Comparaison entre plusieurs départements")
     
     # Remplacement des 2 selectbox par un multiselect pour choisir N départements
     deps_selectionnes = st.multiselect(
