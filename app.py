@@ -31,7 +31,7 @@ indicateurs_fait_main = [
     "Poids des AIS (%)"
 ]
 
-# --- NOUVEAU : Fonction de catégorisation ---
+# --- Fonction de catégorisation ---
 def categoriser_indicateur(ind):
     ind_l = ind.lower()
     if any(x in ind_l for x in ["épargne", "epargne", "désendettement", "fonds de roulement", "financement", "besoin"]):
@@ -48,9 +48,22 @@ def categoriser_indicateur(ind):
         return "6️⃣ Autres"
 
 liste_agregats = [elt for elt in df["Agrégat"]]
+tous_les_indicateurs_bruts = list(set(indicateurs_fait_main + liste_agregats))
 
-# Tri personnalisé par catégorie puis par ordre alphabétique
-indiacteurs = sorted(list(set(indicateurs_fait_main + liste_agregats)), key=lambda x: (categoriser_indicateur(x), x))
+# --- Création de la liste avec séparateurs visuels pour le menu ---
+dict_categories = {}
+for ind in tous_les_indicateurs_bruts:
+    cat = categoriser_indicateur(ind)
+    if cat not in dict_categories:
+        dict_categories[cat] = []
+    dict_categories[cat].append(ind)
+
+# On garde ta variable indiacteurs avec sa faute de frappe
+indiacteurs = []
+for cat in sorted(dict_categories.keys()):
+    indiacteurs.append(f" 📂 ━━━ {cat} ━━━") # Le séparateur visuel qui sert de titre
+    for ind in sorted(dict_categories[cat]):
+        indiacteurs.append(ind)
 
 # On stocke les variables min_annee et max_annee
 min_annee = int(df["Exercice"].min())
@@ -368,12 +381,15 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-indicateurs_choisis = st.sidebar.multiselect(
+# Stockage brut des clics de l'utilisateur (incluant potentiellement les "titres")
+indicateurs_choisis_bruts = st.sidebar.multiselect(
     "Choisissez les indicateurs à visualiser :",
     options=indiacteurs,
-    default=indicateurs_fait_main,
-    format_func=lambda x: f"{categoriser_indicateur(x)} - {x}" # <- La magie opère ici pour l'affichage visuel
+    default=indicateurs_fait_main
 )
+
+# Sécurité vitale : On retire les séparateurs "📂 ━━━" de la liste des choix réels si l'utilisateur les coche
+indicateurs_choisis = [ind for ind in indicateurs_choisis_bruts if not ind.startswith(" 📂 ━━━")]
 
 par_habitant = st.sidebar.checkbox("Afficher les données en par habitant (€/hab)")
 
@@ -403,7 +419,7 @@ st.write("---")
 
 # Sécurité : vérifier qu'au moins 1 indicateur est sélectionné
 if menu != "Recherche départements de même strate" and len(indicateurs_choisis) == 0:
-    st.warning("⚠️ Veuillez sélectionner **au moins 1 indicateur** dans le panneau latéral de gauche pour générer les graphiques.")
+    st.warning("⚠️ Veuillez sélectionner **au moins 1 vrai indicateur** dans le panneau latéral de gauche pour générer les graphiques.")
     st.stop()
 
 
