@@ -189,13 +189,13 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
         if ind not in pivot.columns:
             pivot[ind] = np.nan
 
-    # --- CRÉATION DU GRAPHIQUE UNIQUE SUPERPOSÉ (MISE À JOUR) ---
+    # --- CRÉATION DU GRAPHIQUE UNIQUE SUPERPOSÉ (MISE À JOUR CÔTE À CÔTE) ---
     a_des_normalises = any("(€/hab)" in ind for ind in indicateurs_a_tracer)
 
     if afficher_les_deux and a_des_normalises:
-        # On coupe en deux (haut pour absolu, bas pour habitant) en partageant l'axe X
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 12), sharex=True)
-        fig.suptitle(f"Analyse croisée de : {nom_dep}", fontsize=22, fontweight="bold", y=0.98)
+        # On crée une disposition de 1 ligne et 2 colonnes pour les afficher côte à côte
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
+        fig.suptitle(f"Analyse croisée de : {nom_dep}", fontsize=22, fontweight="bold", y=1.02)
         
         for ind in indicateurs_a_tracer:
             if ind in pivot.columns and pivot[ind].notna().any():
@@ -204,20 +204,22 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
                 else:
                     sns.lineplot(data=pivot, x="Exercice", y=ind, marker="o", label=ind, ax=ax1, linewidth=3)
                     
-                    # On garde les lignes de repères pour la dette sur l'axe des valeurs absolues
+                    # Lignes de repères pour la dette
                     if ind == "Capacité de désendettement (années)":
                         ax1.axhline(12, color="darkred", linestyle="--", linewidth=1)
                         ax1.axhline(9, color="red", linestyle="--", linewidth=1)
                         ax1.axhline(6, color="darkorange", linestyle="--", linewidth=1)
                         ax1.axhline(3, color="green", linestyle="--", linewidth=1)
 
-        ax1.set_ylabel("Valeurs absolues")
-        ax2.set_ylabel("Valeurs normalisées (€/hab)")
+        ax1.set_title("Valeurs absolues", fontsize=15, fontweight="semibold")
+        ax2.set_title("Valeurs normalisées (€/hab)", fontsize=15, fontweight="semibold")
+        ax1.set_ylabel("Montant")
+        ax2.set_ylabel("Montant (€/hab)")
+        ax1.set_xlabel("Exercice")
         ax2.set_xlabel("Exercice")
         
-        # On sort les légendes pour la propreté
-        ax1.legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=12)
-        ax2.legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=12)
+        ax1.legend(loc='best', fontsize=10)
+        ax2.legend(loc='best', fontsize=10)
         
         ax1.set_xticks(pivot["Exercice"].unique())
         ax2.set_xticks(pivot["Exercice"].unique())
@@ -517,7 +519,7 @@ par_habitant = st.sidebar.checkbox("Afficher les données en par habitant (€/h
 # La mini-option conditionnelle
 afficher_les_deux = False
 if par_habitant:
-    afficher_les_deux = st.sidebar.checkbox("Afficher et superposer l'absolu ET le normalisé")
+    afficher_les_deux = st.sidebar.checkbox("Afficher côte à côte l'absolu ET le normalisé")
 
 st.sidebar.markdown("<hr>", unsafe_allow_html=True)
 st.sidebar.markdown(
@@ -531,8 +533,8 @@ menu = st.sidebar.radio(
         "Analyser un seul département",
         "Recherche départements de même strate", 
         "Comparaison d'indicateurs financiers entre plusieurs départements", 
-        "Comparaison d'indicateurs financiers entre un département et la moyenne de sa strate",
-        "Comparaison d'indicateurs financiers entre un département, la moyenne de sa strate et la moyenne de la métropole"
+        "Département comparé à la moyenne de sa strate",
+        "Département comparé à la moyenne de sa strate et à la moyenne de la métropole"
     ],
     label_visibility="collapsed" 
 )
@@ -601,8 +603,8 @@ elif menu == "Comparaison d'indicateurs financiers entre plusieurs départements
             st.subheader("📋 Données brutes")
             st.dataframe(data, use_container_width=True)
 
-elif menu == "Comparaison d'indicateurs financiers entre un département et la moyenne de sa strate":
-    st.header("📈 Comparaison d'un département à sa strate")
+elif menu == "Département comparé à la moyenne de sa strate":
+    st.header("📈 Département comparé à la moyenne de sa strate")
     col1, col2 = st.columns(2)
     with col1:
         dep = st.selectbox("Sélectionnez le département :", liste_deps)
@@ -620,8 +622,8 @@ elif menu == "Comparaison d'indicateurs financiers entre un département et la m
         st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
 
-elif menu == "Comparaison d'indicateurs financiers entre un département, la moyenne de sa strate et la moyenne de la métropole":
-    st.header("🏢 Comparaison : Département VS Strate VS Métropole")
+elif menu == "Département comparé à la moyenne de sa strate et à la moyenne de la métropole":
+    st.header("🏢 Département comparé à la moyenne de sa strate et à la moyenne de la métropole")
     col1, col2 = st.columns(2)
     with col1:
         dep = st.selectbox("Sélectionnez le département :", liste_deps)
