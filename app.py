@@ -143,7 +143,7 @@ def ajouter_etiquettes_desendettement(ax, df_donnees):
 # Nos fonctions correspondant aux différentes fonctionalités du site
 
 def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_habitant=False, afficher_les_deux=False):
-    """Nouvelle fonction pour tracer les indicateurs d'un seul département"""
+    """Nouvelle fonction pour tracer TOUS les indicateurs d'un seul département SUR LE MÊME GRAPHIQUE"""
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
     code_dep = str(code_dep)
@@ -189,7 +189,28 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
         if ind not in pivot.columns:
             pivot[ind] = np.nan
 
-    fig = generer_graphiques(pivot, f"Analyse de {nom_dep}", indicateurs_a_tracer, par_habitant and not afficher_les_deux, afficher_les_deux)
+    # --- CRÉATION DU GRAPHIQUE UNIQUE SUPERPOSÉ ---
+    fig, ax = plt.subplots(figsize=(14, 8))
+    fig.suptitle(f"Comparaison d'indicateurs pour : {nom_dep}", fontsize=22, fontweight="bold", y=0.98)
+    
+    # On boucle pour dessiner chaque indicateur sur le même ax
+    for ind in indicateurs_a_tracer:
+        if ind in pivot.columns and pivot[ind].notna().any():
+            sns.lineplot(data=pivot, x="Exercice", y=ind, marker="o", label=ind, ax=ax, linewidth=3)
+            
+            # Si jamais on trace le désendettement, on garde les lignes repères
+            if ind == "Capacité de désendettement (années)":
+                ax.axhline(12, color="darkred", linestyle="--", linewidth=1)
+                ax.axhline(9, color="red", linestyle="--", linewidth=1)
+                ax.axhline(6, color="darkorange", linestyle="--", linewidth=1)
+                ax.axhline(3, color="green", linestyle="--", linewidth=1)
+
+    ax.set_ylabel("Valeur")
+    ax.set_xticks(pivot["Exercice"].unique())
+    
+    # On place la légende à l'extérieur pour ne pas cacher les courbes
+    ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=12)
+    plt.tight_layout()
 
     colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
     df_final = pivot[[c for c in colonnes if c in pivot.columns]].round(1).sort_values(by=["Exercice"])
