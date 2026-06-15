@@ -48,12 +48,12 @@ structure_indicateurs = {
         ],
         "Recettes d'investissement": [
             "Recettes d'investissement",
-            "Recettes d'investissement hors emprunts",  # <-- Ajouté ici
+            "Recettes d'investissement hors emprunts",
             "FCTVA", "Subventions reçues et participations", "DDEC", "Emprunts hors GAD", "Autres recettes d'investissement"
         ],
         "Totaux": [
             "Recettes totales",
-            "Recettes totales hors emprunt"  # <-- Ajouté ici
+            "Recettes totales hors emprunt"
         ]
     },
     "3️⃣ Dépenses": {
@@ -431,7 +431,8 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
 
     indicateurs_a_tracer = indicateurs.copy()
     
-    if par_habitant hardware and "Population totale" in pivot.columns:
+    # Correction effectuée ici
+    if par_habitant and "Population totale" in pivot.columns:
         if afficher_les_deux:
             indicateurs_a_tracer = []
             for ind in indicateurs:
@@ -552,7 +553,7 @@ menu = st.sidebar.radio(
 st.write("---")
 
 if menu != "Recherche départements de même strate" and len(indicateurs_choisis) == 0:
-    st.warning("⚠️ Veuillez sélectionner **au moins 1 indicator** dans le panneau latéral de gauche pour générer les graphiques.")
+    st.warning("⚠️ Veuillez sélectionner **au moins 1 indicateur** dans le panneau latéral de gauche pour générer les graphiques.")
     st.stop()
 
 
