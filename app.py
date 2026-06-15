@@ -4,8 +4,6 @@ import seaborn as sns
 import numpy as np
 import streamlit as st
 
-
-
 # Chargement données et on les garde en mémoire vive
 @st.cache_data
 def load_data():
@@ -18,72 +16,106 @@ except FileNotFoundError:
     st.error("Le fichier 'ofgl-base-departements.zip' est introuvable. Contactez l'administrateur du site.")
     st.stop()
 
-
-
 # Configuration page web
 st.set_page_config(page_title="Analyse financière départementale", layout="wide", page_icon="📊")
 
-
-
-# Indicateurs que l'on code
+# Indicateurs cochés par défaut à l'ouverture du site
 indicateurs_fait_main = [
     "Capacité de désendettement (années)", 
     "Poids des AIS (%)"
 ]
 
-# --- Fonction de catégorisation ---
-def categoriser_indicateur(ind):
-    ind_l = ind.lower()
-    
-    # 1. Épargne (Très spécifique)
-    if any(x in ind_l for x in ["épargne", "epargne", "désendettement", "fonds de roulement", "financement", "besoin"]):
-        return "1️⃣ Épargne & Résultats"
-        
-    # 4. Social (Placé en haut pour capter "frais d'hébergement" avant le mot "frais")
-    elif any(x in ind_l for x in ["allocation", "ais", "cnsa", "hébergement", "social"]):
-        return "4️⃣ Social & Solidarité"
-        
-    # 5. Dette & Trésorerie (Placé avant dépenses pour capter "charges financières" ou "dépôts")
-    elif any(x in ind_l for x in ["dette", "emprunt", "trésorerie", "financière", "financier", "gad", "annuité", "dépôt", "trésor"]):
-        return "5️⃣ Dette & Trésorerie"
-        
-    # 2. Recettes (Ajout de "concours" et "subventions reçues")
-    elif any(x in ind_l for x in ["recette", "dotation", "impôt", "taxe", "tva", "dmto", "cvae", "ticpe", "tsca", "fiscal", "fctva", "fmdi", "péreq", "compensation", "vente", "produit", "concours", "subventions reçues"]):
-        return "2️⃣ Recettes & Fiscalité"
-        
-    # 3. Dépenses (Prend tout le reste des charges, dont les "subventions" classiques versées)
-    elif any(x in ind_l for x in ["dépense", "achat", "frais", "subvention", "personnel", "sdis", "ddec", "travaux", "charge", "intervention"]):
-        return "3️⃣ Dépenses"
-        
-    # Sécurité au cas où l'OFGL ajoute un nouveau mot inconnu l'année prochaine
-    else:
-        return "6️⃣ Autres"
+# --- STRUCTURE HIÉRARCHIQUE DES CATÉGORIES ET SOUS-CATÉGORIES ---
+# On crée un dictionnaire qui contient des dictionnaires (pour les sous-catégories)
+structure_indicateurs = {
+    "1️⃣ Épargne & Résultats": {
+        "Indicateurs": [
+            "Dépenses totales", "Dépenses d'investissement", "Dépenses de fonctionnement",
+            "Recettes totales", "Recettes d'investissement", "Recettes de fonctionnement",
+            "Epargne brute", "Epargne brute avant travaux en régie", "Epargne de gestion",
+            "Epargne nette", "Capacité ou besoin de financement", "Fonds de roulement",
+            "Variation du fonds de roulement"
+        ]
+    },
+    "2️⃣ Recettes": {
+        "Recettes de fonctionnement": [
+            "Recettes de fonctionnement", # Le premier correspond au titre en gras
+            "Attribution fonds de péreq. DMTO", "Autres dotations de fonctionnement",
+            "Autres dotations et subventions", "Autres impôts et taxes", "CVAE", "Concours de l'Etat",
+            "DMTO après péreq.", "DMTO avant péreq.", "Dotation globale de fonctionnement", "FMDI",
+            "Fiscalité reversée", "Impôts et taxes", "Impôts locaux", "Produit des cessions d'immobilisations",
+            "Prélèvement fonds de péreq. DMTO", "Péréquations et compensations fiscales", "TICPE", "TSCA",
+            "TVA", "Ventes de biens et services", "Autres recettes de fonctionnement"
+        ],
+        "Recettes d'investissement": [
+            "Recettes d'investissement",
+            "FCTVA", "Subventions reçues et participations", "DDEC", "Emprunts hors GAD", "Autres recettes d'investissement"
+        ],
+        "Totaux": [
+            "Recettes totales"
+        ]
+    },
+    "3️⃣ Dépenses": {
+        "Dépenses de fonctionnement": [
+            "Dépenses de fonctionnement",
+            "Achats et charges externes", "Dépenses d'intervention", "Contributions aux SDIS",
+            "Subventions aux personnes de droit privé", "Travaux en régie", "Frais de personnel",
+            "Autres dépenses de fonctionnement"
+        ],
+        "Dépenses d'investissement": [
+            "Dépenses d'investissement",
+            "Dépenses d'investissement hors remb", "Dépenses d'équipement", "Subventions d'équipement versées",
+            "Autres dépenses d'investissement"
+        ],
+        "Totaux": [
+            "Dépenses totales", "Dépenses totales hors remb"
+        ]
+    },
+    "4️⃣ Social & Solidarité": {
+        "Indicateurs": [
+            "Allocations APA", "Allocations PCH", "Allocations RSA", "Poids des AIS (%)", "CNSA", "Frais d'hébergement"
+        ]
+    },
+    "5️⃣ Dette & Trésorerie": {
+        "Indicateurs": [
+            "Annuité de la dette", "Charges financières", "Remboursements d'emprunts hors GAD", "Emprunts hors GAD",
+            "Fonds de soutien aux emprunts à risque", "Flux net de dette", "Encours de dette",
+            "Encours de dette - Dettes bancaires et assimilées", "Encours de dette - Dépôts et cautionnements reçus",
+            "Capacité de désendettement (années)", "Crédits de trésorerie", "Dépôts au Trésor"
+        ]
+    }
+}
 
-liste_agregats = [elt for elt in df["Agrégat"]]
+# Gestion des indicateurs restants (sécurité au cas où la base de données change)
+liste_agregats = list(df["Agrégat"].unique())
+tous_indicateurs_dispo = set(indicateurs_fait_main + liste_agregats)
 
-# Tri personnalisé par catégorie puis alphabétique
-indiacteurs = sorted(list(set(indicateurs_fait_main + liste_agregats)), key=lambda x: (categoriser_indicateur(x), x))
+# On vérifie quels indicateurs ont déjà été classés
+indicateurs_classes = set()
+for main_cat, subcats in structure_indicateurs.items():
+    for subcat, inds in subcats.items():
+        indicateurs_classes.update(inds)
+
+# Ceux qui n'ont pas été classés vont dans "Autres"
+indicateurs_restants = [ind for ind in tous_indicateurs_dispo if ind not in indicateurs_classes]
+if indicateurs_restants:
+    structure_indicateurs["6️⃣ Autres"] = {"Indicateurs": sorted(indicateurs_restants)}
+
 
 # On stocke les variables min_annee et max_annee
 min_annee = int(df["Exercice"].min())
 max_annee = int(df["Exercice"].max())
 
 
-
 # Fonction de génération des graphiques dynamique
 def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher_les_deux=False):
-    # Calcul dynamique des lignes et colonnes en fonction du nombre d'indicateurs
     n = len(indicateurs)
-    
-    # On force l'affichage à 2 colonnes maximum par ligne pour garder un beau dashboard
     cols = 2 if n >= 2 else 1
     rows = (n + cols - 1) // cols
     
-    # La hauteur de la figure s'adapte au nombre de lignes (5 par ligne)
     fig, axes = plt.subplots(rows, cols, figsize=(16, 5 * rows))
     fig.suptitle(titre, fontsize=25, fontweight="bold", y=1.02) 
 
-    # On sécurise l'aplatissement (gère le fait qu'il y ait 1, 2 ou 10 graphiques)
     if rows == 1 and cols == 1:
         axes_flat = [axes]
     else:
@@ -92,14 +124,12 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     for i, ind in enumerate(indicateurs):
         ax = axes_flat[i]
         
-        # Prévention d'erreurs
         if ind not in df_plot.columns:
             ax.set_title(f"{ind}\n(Données indisponibles)", fontsize=12, color="gray")
             continue
             
         sns.lineplot(data=df_plot, x="Exercice", y=ind, hue="Nom 2024 Département", marker="o", ax=ax, linewidth=3)
         
-        # Adaptation du titre si par_habitant est coché et qu'on ne les affiche pas en double (sinon le nom contient déjà la mention)
         titre_axe = f"{ind} (€/hab)" if par_habitant and not afficher_les_deux and ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)"] else ind
         ax.set_title(titre_axe, fontsize=15, fontweight="semibold")
         ax.set_xticks(df_plot["Exercice"].unique())
@@ -113,13 +143,11 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
             if ax.get_legend() is not None:
                 ax.legend(loc="best", fontsize="small")
 
-    # Nettoyage des cases vides (ex: 3 indicateurs sur une grille 2x2 ou 5 sur une grille 3x2)
     for j in range(n, len(axes_flat)):
         fig.delaxes(axes_flat[j])
 
     plt.tight_layout()
     return fig
-
 
 
 def ajouter_etiquettes_desendettement(ax, df_donnees):
@@ -139,11 +167,9 @@ def ajouter_etiquettes_desendettement(ax, df_donnees):
             )
 
 
-
-# Nos fonctions correspondant aux différentes fonctionalités du site
+# --- FONCTIONS DE TRAITEMENT ET ANALYSE ---
 
 def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_habitant=False, afficher_les_deux=False):
-    """Nouvelle fonction pour tracer TOUS les indicateurs d'un seul département SUR LE MÊME GRAPHIQUE"""
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
     code_dep = str(code_dep)
@@ -189,11 +215,9 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
         if ind not in pivot.columns:
             pivot[ind] = np.nan
 
-    # --- CRÉATION DU GRAPHIQUE UNIQUE SUPERPOSÉ (MISE À JOUR CÔTE À CÔTE) ---
     a_des_normalises = any("(€/hab)" in ind for ind in indicateurs_a_tracer)
 
     if afficher_les_deux and a_des_normalises:
-        # On crée une disposition de 1 ligne et 2 colonnes pour les afficher côte à côte
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
         fig.suptitle(f"Analyse croisée de : {nom_dep}", fontsize=22, fontweight="bold", y=1.02)
         
@@ -204,7 +228,6 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
                 else:
                     sns.lineplot(data=pivot, x="Exercice", y=ind, marker="o", label=ind, ax=ax1, linewidth=3)
                     
-                    # Lignes de repères pour la dette
                     if ind == "Capacité de désendettement (années)":
                         ax1.axhline(12, color="darkred", linestyle="--", linewidth=1)
                         ax1.axhline(9, color="red", linestyle="--", linewidth=1)
@@ -217,17 +240,12 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
         ax2.set_ylabel("Montant (€/hab)")
         ax1.set_xlabel("Exercice")
         ax2.set_xlabel("Exercice")
-        
         ax1.legend(loc='best', fontsize=10)
         ax2.legend(loc='best', fontsize=10)
-        
         ax1.set_xticks(pivot["Exercice"].unique())
         ax2.set_xticks(pivot["Exercice"].unique())
-        
         plt.tight_layout()
-
     else:
-        # Le code normal pour tracer sur un seul axe
         fig, ax = plt.subplots(figsize=(14, 8))
         fig.suptitle(f"Comparaison d'indicateurs pour : {nom_dep}", fontsize=22, fontweight="bold", y=0.98)
         
@@ -244,7 +262,6 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
         ax.set_ylabel("Valeur")
         ax.set_xlabel("Exercice")
         ax.set_xticks(pivot["Exercice"].unique())
-        
         ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=12)
         plt.tight_layout()
 
@@ -253,7 +270,6 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
     return fig, df_final
 
 
-# La première
 def departements_meme_strate(df, code_dep, mm_region=False):
     df_temp = df.copy()
     code_dep = str(code_dep)
@@ -274,7 +290,6 @@ def departements_meme_strate(df, code_dep, mm_region=False):
     return df_resultat.reset_index(drop=True)
 
 
-# La deuxième
 def comparer_departements(df, liste_codes_dep, intervalle_annees, indicateurs, par_habitant=False, afficher_les_deux=False):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
@@ -323,7 +338,6 @@ def comparer_departements(df, liste_codes_dep, intervalle_annees, indicateurs, p
     return fig, df_final
 
 
-# La troisième
 def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, meme_region=False, par_habitant=False, afficher_les_deux=False):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
@@ -338,7 +352,7 @@ def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, me
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & \
                    (df_temp["Strate population 2024"] == strate) & \
                    (df_temp["Exercice"] >= annee_min) & (df_temp["Exercice"] <= annee_max)
-                   
+                    
     idx_cols = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Nom 2024 Région"]
     if "Population totale" in df_temp.columns: idx_cols.append("Population totale")
 
@@ -391,7 +405,6 @@ def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, me
     return fig, df_final
 
 
-# La quatrième
 def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateurs, meme_region=False, par_habitant=False, afficher_les_deux=False):
     df_temp = df.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
@@ -401,13 +414,12 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
     df_dep_cible = df_temp[df_temp["Code Insee 2024 Département"] == code_dep]
     strate = df_dep_cible["Strate population 2024"].iloc[0]
     nom_dep = df_dep_cible["Nom 2024 Département"].iloc[0]
-    region = df_dep_cible["Nom 2024 Région"].iloc[0] # Récupération de la région
+    region = df_dep_cible["Nom 2024 Région"].iloc[0]
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & \
                    ((df_temp["Outre-mer"] == "Non") | (df_temp["Code Insee 2024 Département"] == code_dep)) & \
                    (df_temp["Exercice"] >= annee_min) & (df_temp["Exercice"] <= annee_max)
                    
-    # On ajoute la région dans l'index du pivot_table
     idx_cols = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Strate population 2024", "Outre-mer", "Nom 2024 Région"]
     if "Population totale" in df_temp.columns: idx_cols.append("Population totale")
 
@@ -444,7 +456,6 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
 
     df_strate = pivot[(pivot["Strate population 2024"] == strate) & (pivot["Code Insee 2024 Département"] != code_dep)].copy()
     
-    # Filtre sur la région pour la moyenne de la strate si la case a été cochée
     if meme_region:
         df_strate = df_strate[df_strate["Nom 2024 Région"] == region]
 
@@ -452,7 +463,6 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
     label_moyenne = f"Moyenne Strate {strate}" + (" (même région)" if meme_region else " (France)")
     df_moy_strate["Nom 2024 Département"] = label_moyenne
 
-    # La moyenne métropole reste globale (elle ne se restreint pas à la région)
     df_metro = pivot[pivot["Outre-mer"] == "Non"].copy()
     df_moy_metro = df_metro.groupby("Exercice")[cols_mean].mean().reset_index()
     df_moy_metro["Nom 2024 Département"] = "Moyenne Métropole"
@@ -466,13 +476,11 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
     return fig, df_final 
 
 
-
 # --- 5. L'INTERFACE GRAPHIQUE UTILISATEUR (STREAMLIT) ---
 
 st.title("📊 Outil d'analyse financière de départements")
-st.markdown("Bienvenue dans l'interface d'analyse. Choisissez une fonctionnalité du magnifique menu situé à votre gauche.")
+st.markdown("Bienvenue dans l'interface d'analyse. Choisissez une fonctionnalité du menu situé à votre gauche.")
 
-# Liste des départements pour les menus déroulants
 liste_deps = sorted(df["Code Insee 2024 Département"].astype(str).unique())
 
 st.markdown("""
@@ -491,32 +499,40 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-# On regroupe les indicateurs par catégorie pour créer les sous-menus visuels
-dict_categories = {}
-for ind in indiacteurs:
-    cat = categoriser_indicateur(ind)
-    if cat not in dict_categories:
-        dict_categories[cat] = []
-    dict_categories[cat].append(ind)
+st.sidebar.markdown("**📂 Choix des indicateurs par thème :**")
 
 indicateurs_choisis = []
 
-# Création du volet déroulant pour la sélection des indicateurs
-with st.sidebar.expander("📂 Choix des indicateurs par thème", expanded=True):
-    for cat in sorted(dict_categories.keys()):
-        # On définit les valeurs cochées par défaut pour cette catégorie
-        defauts_cat = [ind for ind in dict_categories[cat] if ind in indicateurs_fait_main]
-        
-        choix = st.multiselect(
-            label=cat,
-            options=dict_categories[cat],
-            default=defauts_cat
-        )
-        indicateurs_choisis.extend(choix)
+# Création des menus déroulants (expanders) pour chaque grande catégorie
+for main_cat, subcats in sorted(structure_indicateurs.items()):
+    with st.sidebar.expander(main_cat, expanded=False): # Fermé par défaut pour gagner de la place
+        for subcat_name, indicators_list in subcats.items():
+            
+            # Si c'est une vraie sous-catégorie (ex: "Dépenses de fonctionnement"), on affiche son titre en gras
+            if subcat_name != "Indicateurs":
+                st.markdown(f"**{subcat_name}**")
+            
+            # On cherche quels indicateurs de cette liste doivent être cochés par défaut
+            defauts_cat = [ind for ind in indicators_list if ind in indicateurs_fait_main]
+            
+            # Affichage de la boîte de choix multiple
+            choix = st.multiselect(
+                label=subcat_name,
+                options=indicators_list,
+                default=defauts_cat,
+                key=f"ms_{main_cat}_{subcat_name}", # Clé unique obligatoire pour Streamlit
+                label_visibility="collapsed" if subcat_name != "Indicateurs" else "visible" 
+            )
+            indicateurs_choisis.extend(choix)
+
+# Sécurité : Si un indicateur est présent dans plusieurs sous-catégories et sélectionné plusieurs fois,
+# cette ligne supprime les doublons pour ne pas faire planter les graphiques.
+indicateurs_choisis = list(dict.fromkeys(indicateurs_choisis))
+
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
 
 par_habitant = st.sidebar.checkbox("Afficher les données en par habitant (€/hab)")
 
-# La mini-option conditionnelle
 afficher_les_deux = False
 if par_habitant:
     afficher_les_deux = st.sidebar.checkbox("Afficher côte à côte l'absolu ET le normalisé")
@@ -541,7 +557,6 @@ menu = st.sidebar.radio(
 
 st.write("---")
 
-# Sécurité : vérifier qu'au moins 1 indicateur est sélectionné
 if menu != "Recherche départements de même strate" and len(indicateurs_choisis) == 0:
     st.warning("⚠️ Veuillez sélectionner **au moins 1 indicateur** dans le panneau latéral de gauche pour générer les graphiques.")
     st.stop()
@@ -584,7 +599,6 @@ elif menu == "Recherche départements de même strate":
 elif menu == "Comparaison d'indicateurs financiers entre plusieurs départements":
     st.header("⚖️ Comparaison entre plusieurs départements")
     
-    # Remplacement des 2 selectbox par un multiselect pour choisir N départements
     deps_selectionnes = st.multiselect(
         "Sélectionnez les départements à comparer :", 
         liste_deps, 
