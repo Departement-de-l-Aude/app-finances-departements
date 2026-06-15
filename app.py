@@ -87,18 +87,6 @@ structure_indicateurs = {
     }
 }
 
-# Gestion des indicateurs restants (sécurité base de données)
-liste_agregats = list(df["Agrégat"].unique())
-tous_indicateurs_dispo = set(indicateurs_fait_main + liste_agregats)
-
-indicateurs_classes = set()
-for main_cat, subcats in structure_indicateurs.items():
-    for subcat, inds in subcats.items():
-        indicateurs_classes.update(inds)
-
-indicateurs_restants = [ind for ind in tous_indicateurs_dispo if ind not in indicateurs_classes]
-if indicateurs_restants:
-    structure_indicateurs["6️⃣ Autres"] = {"Indicateurs": sorted(indicateurs_restants)}
 
 # On stocke les variables min_annee et max_annee
 min_annee = int(df["Exercice"].min())
@@ -431,7 +419,6 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
 
     indicateurs_a_tracer = indicateurs.copy()
     
-    # Correction effectuée ici
     if par_habitant and "Population totale" in pivot.columns:
         if afficher_les_deux:
             indicateurs_a_tracer = []
