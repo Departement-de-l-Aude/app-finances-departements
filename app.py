@@ -107,8 +107,8 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     else:
         lignes = (n+1) // 2    # On aura un graphe "seul" en + en bas
 
-    # --- CORRECTIF MARGES ET CHEVAUCHEMENT ---
-    hauteur_ligne = 5.5
+    # --- NOUVEAUX RÉGLAGES D'ESPACEMENT ---
+    hauteur_ligne = 4.5  # Modifié : on passe de 5.5 à 4.5 pour moins étirer l'image verticalement
     hauteur_totale = hauteur_ligne * lignes
     # On réserve 1.5 pouces physiques pour le grand titre, peu importe la taille de l'image
     marge_haut_relative = 1.5 / hauteur_totale
@@ -152,9 +152,8 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     if len(axes_liste) - n > 0:
         fig.delaxes(axes_liste[-1])
 
-    # On utilise subplots_adjust au lieu de tight_layout pour forcer des marges incompressibles
-    # hspace = 0.5 signifie que l'espacement vertical vaut 50% de la hauteur d'un graphique (fini les chevauchements)
-    fig.subplots_adjust(top=1 - marge_haut_relative, bottom=0.05, left=0.05, right=0.95, hspace=0.5, wspace=0.2)
+    # Modifié : hspace passe de 0.5 à 0.35 pour rapprocher les graphiques
+    fig.subplots_adjust(top=1 - marge_haut_relative, bottom=0.05, left=0.05, right=0.95, hspace=0.35, wspace=0.2)
     
     return fig
 
@@ -658,7 +657,7 @@ elif menu == "Département comparé à la moyenne de sa strate et à la moyenne 
 
 
 # =====================================================================
-# --- AFFICHAGE CENTRALISÉ (LE CODE PROPRE) ---
+# --- AFFICHAGE CENTRALISÉ ---
 # =====================================================================
 
 if fig_finale is not None:
