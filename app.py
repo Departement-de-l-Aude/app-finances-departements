@@ -119,24 +119,29 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
         axes_liste = axes.flatten()
 
     for i, indic in enumerate(indicateurs):
-        ax = axes_liste[i]
+        axe = axes_liste[i]
 
         # Mesure de sécurité à priori inutile, sauf si un jour le fichier ofgl mis à jour n'a plus les mêmes noms d'agrégats
-     
-        sns.lineplot(data=df_plot, x="Exercice", y=indic, hue="Nom 2024 Département", marker="o", ax=ax, linewidth=3)
+        # ou qu'un agrégat n'existe pas sur une certaine période mais j'ai vu que, par exemple, pour la TVA dans l'Aude,
+        # même si elle n'existait pas avant, ils ont rajouté des lignes TVA avec 0 sur les années passés (dans le fichier ofgl)
+        if indic not in df_plot.columns:
+            axe.set_title(f"{indic}\n(Données indisponibles)", fontsize=12, color="gray")
+            continue
+            
+        sns.lineplot(data=df_plot, x="Exercice", y=indic, hue="Nom 2024 Département", marker="o", axe=axe, linewidth=3)
         
         titre_axe = f"{indic} (€/hab)" if par_habitant and not afficher_les_deux and indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)"] else indic
-        ax.set_title(titre_axe, fontsize=15, fontweight="semibold")
-        ax.set_xticks(df_plot["Exercice"].unique())
+        axe.set_title(titre_axe, fontsize=15, fontweight="semibold")
+        axe.set_xticks(df_plot["Exercice"].unique())
         
         if indic == "Capacité de désendettement (années)":
-            ax.axhline(12, color="darkred", linestyle="--", linewidth=1, label="Surendettement avéré")
-            ax.axhline(9, color="red", linestyle="--", linewidth=1, label="Surendettement trop élevé")
-            ax.axhline(6, color="darkorange", linestyle="--", linewidth=1, label="Surendettement élevé")
-            ax.axhline(3, color="green", linestyle="--", linewidth=1, label="Endettement maîtrisé")
-            ajouter_etiquettes_desendettement(ax, df_plot)
-            if ax.get_legend() is not None:
-                ax.legend(loc="best", fontsize="small")
+            axe.axhline(12, color="darkred", linestyle="--", linewidth=1, label="Surendettement avéré")
+            axe.axhline(9, color="red", linestyle="--", linewidth=1, label="Surendettement trop élevé")
+            axe.axhline(6, color="darkorange", linestyle="--", linewidth=1, label="Surendettement élevé")
+            axe.axhline(3, color="green", linestyle="--", linewidth=1, label="Endettement maîtrisé")
+            ajouter_etiquettes_desendettement(axe, df_plot)
+            if axe.get_legend() is not None:
+                axe.legend(loc="best", fontsize="small")
 
     for j in range(n, len(axes_liste)):
         fig.delaxes(axes_liste[j])
@@ -145,7 +150,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     return fig
 
 
-def ajouter_etiquettes_desendettement(ax, df_donnees):
+def ajouter_etiquettes_desendettement(axe, df_donnees):
     for index, ligne in df_donnees.iterrows():
         if ligne.get("Capacité de désendettement (années)", -1) == 0:
             vraie_valeur = ligne.get("Capacité de désendettement (vraie)", np.nan)
@@ -154,7 +159,7 @@ def ajouter_etiquettes_desendettement(ax, df_donnees):
             else:
                 vraie_valeur_texte = f"{vraie_valeur:.1f}"
             
-            ax.annotate(
+            axe.annotate(
                 vraie_valeur_texte, xy=(ligne["Exercice"], 0), xytext=(0, 10),
                 textcoords="offset points", ha="center", va="bottom",
                 fontsize=10, color="white", fontweight="bold",
@@ -219,9 +224,9 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
         for indic in indicateurs_a_tracer:
             if indic in pivot.columns and pivot[indic].notna().any():
                 if "(€/hab)" in indic:
-                    sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, ax=ax2, linewidth=3)
+                    sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, axe=ax2, linewidth=3)
                 else:
-                    sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, ax=ax1, linewidth=3)
+                    sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, axe=ax1, linewidth=3)
                     
                     if indic == "Capacité de désendettement (années)":
                         ax1.axhline(12, color="darkred", linestyle="--", linewidth=1)
@@ -241,23 +246,23 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
         ax2.set_xticks(pivot["Exercice"].unique())
         plt.tight_layout()
     else:
-        fig, ax = plt.subplots(figsize=(14, 8))
+        fig, axe = plt.subplots(figsize=(14, 8))
         fig.suptitle(f"Comparaison d'indicateurs pour : {nom_dep}", fontsize=22, fontweight="bold", y=0.98)
         
         for indic in indicateurs_a_tracer:
             if indic in pivot.columns and pivot[indic].notna().any():
-                sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, ax=ax, linewidth=3)
+                sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, axe=axe, linewidth=3)
                 
                 if indic == "Capacité de désendettement (années)":
-                    ax.axhline(12, color="darkred", linestyle="--", linewidth=1)
-                    ax.axhline(9, color="red", linestyle="--", linewidth=1)
-                    ax.axhline(6, color="darkorange", linestyle="--", linewidth=1)
-                    ax.axhline(3, color="green", linestyle="--", linewidth=1)
+                    axe.axhline(12, color="darkred", linestyle="--", linewidth=1)
+                    axe.axhline(9, color="red", linestyle="--", linewidth=1)
+                    axe.axhline(6, color="darkorange", linestyle="--", linewidth=1)
+                    axe.axhline(3, color="green", linestyle="--", linewidth=1)
 
-        ax.set_ylabel("Valeur")
-        ax.set_xlabel("Exercice")
-        ax.set_xticks(pivot["Exercice"].unique())
-        ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=12)
+        axe.set_ylabel("Valeur")
+        axe.set_xlabel("Exercice")
+        axe.set_xticks(pivot["Exercice"].unique())
+        axe.legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=12)
         plt.tight_layout()
 
     colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
