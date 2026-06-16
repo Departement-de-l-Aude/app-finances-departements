@@ -105,10 +105,10 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     n = len(indicateurs)
     cols = 2 if n >= 2 else 1
     
-    if n//2==0:
-        rows = n / cols
+    if n // 2 == 0:
+        rows = n // cols
     else:
-        rows = (n+1)/2    # On aura un graphe "seul" en bas
+        rows = (n+1) // 2    # On aura un graphe "seul" en bas
 
     fig, axes = plt.subplots(rows, cols, figsize=(16, 9))
     fig.suptitle(titre, fontsize=25, fontweight="bold", y=1.02) 
