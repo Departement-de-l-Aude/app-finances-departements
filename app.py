@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import streamlit as st
+import io
 
 # Chargement données et on les garde en mémoire vive pour pas que le site rame trop
 @st.cache_data
@@ -110,8 +111,14 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     else:
         lignes = (n+1) // 2    # On aura un graphe "seul" en + en bas
 
-    fig, axes = plt.subplots(lignes, colonnes, figsize=(4*2*colonnes, 3*2*lignes))    # Affichage des graphiques en 4:3 avec un coeff de taille en +
-    fig.suptitle(titre, fontsize=24, fontweight="bold", y=0.9925) 
+    hauteur_totale = 3 * 2 * lignes
+    # On force une marge physique de 1.2 pouce en haut, peu importe la hauteur totale de l'image
+    marge_fixe = 1.2 / hauteur_totale 
+
+    fig, axes = plt.subplots(lignes, colonnes, figsize=(4*2*colonnes, hauteur_totale))    # Affichage des graphiques en 4:3 avec un coeff de taille en +
+    
+    # Le titre se place toujours au milieu de la marge fixe
+    fig.suptitle(titre, fontsize=24, fontweight="bold", y=1 - (marge_fixe / 2.5)) 
 
     if lignes == 1 and colonnes == 1:
         axes_liste = [axes]
@@ -150,7 +157,8 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     if len(axes_liste) - n > 0:    # Si on est dans le cas ou le nombre d'indicateurs est pair, on supprime le dernier axe
         fig.delaxes(axes_liste[-1])
 
-    plt.tight_layout()
+    # Utilisation de la marge fixe pour bloquer la montée des graphiques
+    plt.tight_layout(rect=[0, 0, 1, 1 - marge_fixe], h_pad=3.5, w_pad=2.0)
     return fig
 
 
@@ -576,6 +584,17 @@ if menu == "Analyser un seul département":
         fig, data = analyser_un_departement(df, dep, annees_sel, indicateurs_choisis, par_habitant, afficher_les_deux)
         if fig:
             st.pyplot(fig)
+            
+            # --- BLOC TÉLÉCHARGEMENT PDF ---
+            buf = io.BytesIO()
+            fig.savefig(buf, format="pdf", bbox_inches="tight")
+            st.download_button(
+                label="📥 Télécharger ce graphique en PDF",
+                data=buf.getvalue(),
+                file_name=f"Analyse_{dep}.pdf",
+                mime="application/pdf"
+            )
+            
             st.subheader("📋 Données brutes")
             st.dataframe(data, use_container_width=True)
         else:
@@ -615,6 +634,17 @@ elif menu == "Comparaison d'indicateurs financiers entre plusieurs départements
         else:
             fig, data = comparer_departements(df, deps_selectionnes, annees_sel, indicateurs_choisis, par_habitant, afficher_les_deux)
             st.pyplot(fig)
+            
+            # --- BLOC TÉLÉCHARGEMENT PDF ---
+            buf = io.BytesIO()
+            fig.savefig(buf, format="pdf", bbox_inches="tight")
+            st.download_button(
+                label="📥 Télécharger ce graphique en PDF",
+                data=buf.getvalue(),
+                file_name="Comparaison_Financiere.pdf",
+                mime="application/pdf"
+            )
+            
             st.subheader("📋 Données brutes")
             st.dataframe(data, use_container_width=True)
 
@@ -634,6 +664,17 @@ elif menu == "Département comparé à la moyenne de sa strate":
     if st.button("Générer l'analyse"):
         fig, data = comparer_departement_strate(df, dep, annees_sel, indicateurs_choisis, meme_region, par_habitant, afficher_les_deux)
         st.pyplot(fig)
+        
+        # --- BLOC TÉLÉCHARGEMENT PDF ---
+        buf = io.BytesIO()
+        fig.savefig(buf, format="pdf", bbox_inches="tight")
+        st.download_button(
+            label="📥 Télécharger ce graphique en PDF",
+            data=buf.getvalue(),
+            file_name=f"Analyse_Strate_{dep}.pdf",
+            mime="application/pdf"
+        )
+        
         st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
 
@@ -653,5 +694,16 @@ elif menu == "Département comparé à la moyenne de sa strate et à la moyenne 
     if st.button("Générer l'analyse complète"):
         fig, data = comparer_departement_strate_metro(df, dep, annees_sel, indicateurs_choisis, meme_region, par_habitant, afficher_les_deux)
         st.pyplot(fig)
+        
+        # --- BLOC TÉLÉCHARGEMENT PDF ---
+        buf = io.BytesIO()
+        fig.savefig(buf, format="pdf", bbox_inches="tight")
+        st.download_button(
+            label="📥 Télécharger ce graphique en PDF",
+            data=buf.getvalue(),
+            file_name=f"Analyse_Complete_{dep}.pdf",
+            mime="application/pdf"
+        )
+        
         st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
