@@ -29,10 +29,6 @@ indicateurs_fait_main = [
 ]
 
 # Catégories et sous-catégories d'indicateurs
-# Mémo : dico_indicateurs est un dictionnaire dont les CLES sont les THEMES de nos indicateurs,
-# les VALEURS sont des DICTIONNAIRES
-# dont les CLES sont les SOUS PARTIES et
-# les VALEURS sont nos INDICATEURS
 dico_indicateurs = {
     "1️⃣ Épargne & Résultats": {
         "Indicateurs": [
@@ -111,14 +107,16 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     else:
         lignes = (n+1) // 2    # On aura un graphe "seul" en + en bas
 
-    hauteur_totale = 3 * 2 * lignes
-    # On force une marge physique de 1.2 pouce en haut, peu importe la hauteur totale de l'image
-    marge_fixe = 1.2 / hauteur_totale 
+    # --- CORRECTIF MARGES ET CHEVAUCHEMENT ---
+    hauteur_ligne = 5.5
+    hauteur_totale = hauteur_ligne * lignes
+    # On réserve 1.5 pouces physiques pour le grand titre, peu importe la taille de l'image
+    marge_haut_relative = 1.5 / hauteur_totale
 
-    fig, axes = plt.subplots(lignes, colonnes, figsize=(4*2*colonnes, hauteur_totale))    # Affichage des graphiques en 4:3 avec un coeff de taille en +
+    fig, axes = plt.subplots(lignes, colonnes, figsize=(16, hauteur_totale))
     
-    # Le titre se place toujours au milieu de la marge fixe
-    fig.suptitle(titre, fontsize=24, fontweight="bold", y=1 - (marge_fixe / 2.5)) 
+    # Le titre se place dans la marge sécurisée
+    fig.suptitle(titre, fontsize=24, fontweight="bold", y=1 - (marge_haut_relative / 3)) 
 
     if lignes == 1 and colonnes == 1:
         axes_liste = [axes]
@@ -128,9 +126,6 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     for i, indic in enumerate(indicateurs):
         axe = axes_liste[i]
 
-        # Mesure de sécurité à priori inutile, sauf si un jour le fichier ofgl mis à jour n'a plus les mêmes noms d'agrégats
-        # ou qu'un agrégat n'existe pas sur une certaine période mais j'ai vu que, par exemple, pour la TVA dans l'Aude,
-        # même si elle n'existait pas avant, ils ont rajouté des lignes TVA avec 0 sur les années passés (dans le fichier ofgl)
         if indic not in df_plot.columns:
             axe.set_title(f"{indic}\n(Données indisponibles)", fontsize=12, color="gray")
             continue
@@ -154,13 +149,14 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
             if axe.get_legend() is not None:
                 axe.legend(loc="best", fontsize="small")
 
-    if len(axes_liste) - n > 0:    # Si on est dans le cas ou le nombre d'indicateurs est pair, on supprime le dernier axe
+    if len(axes_liste) - n > 0:
         fig.delaxes(axes_liste[-1])
 
-    # Utilisation de la marge fixe pour bloquer la montée des graphiques
-    plt.tight_layout(rect=[0, 0, 1, 1 - marge_fixe], h_pad=3.5, w_pad=2.0)
+    # On utilise subplots_adjust au lieu de tight_layout pour forcer des marges incompressibles
+    # hspace = 0.5 signifie que l'espacement vertical vaut 50% de la hauteur d'un graphique (fini les chevauchements)
+    fig.subplots_adjust(top=1 - marge_haut_relative, bottom=0.05, left=0.05, right=0.95, hspace=0.5, wspace=0.2)
+    
     return fig
-
 
 
 def ajouter_etiquettes_desendettement(axe, df_donnees):
@@ -311,7 +307,7 @@ def comparer_departements(df, liste_codes_dep, intervalle_annees, indicateurs, p
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & \
                    (df_temp["Code Insee 2024 Département"].isin(liste_codes_dep)) & \
                    (df_temp["Exercice"] >= annee_min) & (df_temp["Exercice"] <= annee_max)
-                   
+                    
     idx_cols = ["Exercice", "Nom 2024 Département"]
     if "Population totale" in df_temp.columns: idx_cols.append("Population totale")
 
@@ -573,6 +569,11 @@ if menu != "Recherche départements de même strate" and len(indicateurs_choisis
 
 # --- CORPS DE LA PAGE SELON LE MENU ---
 
+# Variables pour centraliser l'affichage
+fig_finale = None
+df_final = None
+nom_export_pdf = "Analyse_Financiere.pdf"
+
 if menu == "Analyser un seul département":
     st.header("🎯 Analyse d'un seul département")
     dep = st.selectbox("Sélectionnez le département à analyser :", liste_deps)
@@ -581,23 +582,9 @@ if menu == "Analyser un seul département":
                            min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
         
     if st.button("Lancer l'analyse"):
-        fig, data = analyser_un_departement(df, dep, annees_sel, indicateurs_choisis, par_habitant, afficher_les_deux)
-        if fig:
-            st.pyplot(fig)
-            
-            # --- BLOC TÉLÉCHARGEMENT PDF ---
-            buf = io.BytesIO()
-            fig.savefig(buf, format="pdf", bbox_inches="tight")
-            st.download_button(
-                label="📥 Télécharger ce graphique en PDF",
-                data=buf.getvalue(),
-                file_name=f"Analyse_{dep}.pdf",
-                mime="application/pdf"
-            )
-            
-            st.subheader("📋 Données brutes")
-            st.dataframe(data, use_container_width=True)
-        else:
+        fig_finale, df_final = analyser_un_departement(df, dep, annees_sel, indicateurs_choisis, par_habitant, afficher_les_deux)
+        nom_export_pdf = f"Analyse_{dep}.pdf"
+        if not fig_finale:
             st.warning("Aucune donnée trouvée pour ce département sur cet intervalle.")
 
 elif menu == "Recherche départements de même strate":
@@ -632,21 +619,8 @@ elif menu == "Comparaison d'indicateurs financiers entre plusieurs départements
         if len(deps_selectionnes) == 0:
             st.warning("⚠️ Veuillez sélectionner au moins un département pour lancer la comparaison.")
         else:
-            fig, data = comparer_departements(df, deps_selectionnes, annees_sel, indicateurs_choisis, par_habitant, afficher_les_deux)
-            st.pyplot(fig)
-            
-            # --- BLOC TÉLÉCHARGEMENT PDF ---
-            buf = io.BytesIO()
-            fig.savefig(buf, format="pdf", bbox_inches="tight")
-            st.download_button(
-                label="📥 Télécharger ce graphique en PDF",
-                data=buf.getvalue(),
-                file_name="Comparaison_Financiere.pdf",
-                mime="application/pdf"
-            )
-            
-            st.subheader("📋 Données brutes")
-            st.dataframe(data, use_container_width=True)
+            fig_finale, df_final = comparer_departements(df, deps_selectionnes, annees_sel, indicateurs_choisis, par_habitant, afficher_les_deux)
+            nom_export_pdf = "Comparaison_Financiere.pdf"
 
 elif menu == "Département comparé à la moyenne de sa strate":
     st.header("📈 Département comparé à la moyenne de sa strate")
@@ -662,21 +636,8 @@ elif menu == "Département comparé à la moyenne de sa strate":
                            min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
         
     if st.button("Générer l'analyse"):
-        fig, data = comparer_departement_strate(df, dep, annees_sel, indicateurs_choisis, meme_region, par_habitant, afficher_les_deux)
-        st.pyplot(fig)
-        
-        # --- BLOC TÉLÉCHARGEMENT PDF ---
-        buf = io.BytesIO()
-        fig.savefig(buf, format="pdf", bbox_inches="tight")
-        st.download_button(
-            label="📥 Télécharger ce graphique en PDF",
-            data=buf.getvalue(),
-            file_name=f"Analyse_Strate_{dep}.pdf",
-            mime="application/pdf"
-        )
-        
-        st.subheader("📋 Données brutes")
-        st.dataframe(data, use_container_width=True)
+        fig_finale, df_final = comparer_departement_strate(df, dep, annees_sel, indicateurs_choisis, meme_region, par_habitant, afficher_les_deux)
+        nom_export_pdf = f"Analyse_Strate_{dep}.pdf"
 
 elif menu == "Département comparé à la moyenne de sa strate et à la moyenne de la métropole":
     st.header("🏢 Département comparé à la moyenne de sa strate et à la moyenne de la métropole")
@@ -692,18 +653,41 @@ elif menu == "Département comparé à la moyenne de sa strate et à la moyenne 
                            min_value=min_annee, max_value=max_annee, value=(min_annee, max_annee))
         
     if st.button("Générer l'analyse complète"):
-        fig, data = comparer_departement_strate_metro(df, dep, annees_sel, indicateurs_choisis, meme_region, par_habitant, afficher_les_deux)
-        st.pyplot(fig)
-        
-        # --- BLOC TÉLÉCHARGEMENT PDF ---
-        buf = io.BytesIO()
-        fig.savefig(buf, format="pdf", bbox_inches="tight")
-        st.download_button(
-            label="📥 Télécharger ce graphique en PDF",
-            data=buf.getvalue(),
-            file_name=f"Analyse_Complete_{dep}.pdf",
-            mime="application/pdf"
-        )
-        
-        st.subheader("📋 Données brutes")
-        st.dataframe(data, use_container_width=True)
+        fig_finale, df_final = comparer_departement_strate_metro(df, dep, annees_sel, indicateurs_choisis, meme_region, par_habitant, afficher_les_deux)
+        nom_export_pdf = f"Analyse_Complete_{dep}.pdf"
+
+
+# =====================================================================
+# --- AFFICHAGE CENTRALISÉ (LE CODE PROPRE) ---
+# =====================================================================
+
+if fig_finale is not None:
+    # 1. On fabrique le PDF en mémoire une seule et unique fois
+    buf = io.BytesIO()
+    fig_finale.savefig(buf, format="pdf", bbox_inches="tight")
+    
+    # 2. BOUTON TOUT EN HAUT (juste au-dessus des graphiques)
+    st.download_button(
+        label="📥 Télécharger l'analyse en PDF",
+        data=buf.getvalue(),
+        file_name=nom_export_pdf,
+        mime="application/pdf",
+        key="bouton_telechargement_haut"
+    )
+    
+    # 3. Affichage du grand graphique
+    st.pyplot(fig_finale)
+    
+    # 4. BOUTON TOUT EN BAS (juste avant les données brutes)
+    st.download_button(
+        label="📥 Télécharger l'analyse en PDF",
+        data=buf.getvalue(),
+        file_name=nom_export_pdf,
+        mime="application/pdf",
+        key="bouton_telechargement_bas"
+    )
+    
+    # 5. Affichage des données
+    st.subheader("📋 Données brutes")
+    if df_final is not None and not df_final.empty:
+        st.dataframe(df_final, use_container_width=True)
