@@ -150,7 +150,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     if len(axes_liste) - n > 0:    # Si on est dans le cas ou le nombre d'indicateurs est pair, on supprime le dernier axe
         fig.delaxes(axes_liste[-1])
 
-   
+    plt.tight_layout()
     return fig
 
 
