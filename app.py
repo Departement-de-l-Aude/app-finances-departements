@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import streamlit as st
-import io  # <-- MODIFICATION NECESSAIRE : Import ajouté pour gérer le téléchargement en mémoire
+import io
 
 # Chargement données et on les garde en mémoire vive pour pas que le site rame trop
 @st.cache_data
@@ -17,8 +17,12 @@ except FileNotFoundError:
     st.error("Le fichier 'ofgl-base-departements.zip' est introuvable. Contactez l'administrateur du site.")
     st.stop()
 
+
+
 # Configuration page web
 st.set_page_config(page_title="Analyse financière départementale", layout="wide", page_icon="📊")
+
+
 
 # Indicateurs cochés par défaut à l'ouverture du site
 indicateurs_fait_main = [
@@ -88,10 +92,10 @@ dico_indicateurs = {
     }
 }
 
-
 # On stocke les variables min_annee et max_annee
 min_annee = int(df["Exercice"].min())
 max_annee = int(df["Exercice"].max())
+
 
 
 # Fonction de génération des graphiques
@@ -143,6 +147,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
 
     plt.tight_layout()
     return fig
+
 
 
 def ajouter_etiquettes_desendettement(axe, df_donnees):
