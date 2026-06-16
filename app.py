@@ -128,7 +128,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
             axe.set_title(f"{indic}\n(Données indisponibles)", fontsize=12, color="gray")
             continue
             
-        sns.lineplot(data=df_plot, x="Exercice", y=indic, hue="Nom 2024 Département", marker="o", axe=axe, linewidth=3)
+        sns.lineplot(data=df_plot, x="Exercice", y=indic, hue="Nom 2024 Département", marker="o", ax=axe, linewidth=3)
         
         titre_axe = f"{indic} (€/hab)" if par_habitant and not afficher_les_deux and indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)"] else indic
         axe.set_title(titre_axe, fontsize=15, fontweight="semibold")
@@ -224,9 +224,9 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
         for indic in indicateurs_a_tracer:
             if indic in pivot.columns and pivot[indic].notna().any():
                 if "(€/hab)" in indic:
-                    sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, axe=ax2, linewidth=3)
+                    sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, ax=ax2, linewidth=3)
                 else:
-                    sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, axe=ax1, linewidth=3)
+                    sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, ax=ax1, linewidth=3)
                     
                     if indic == "Capacité de désendettement (années)":
                         ax1.axhline(12, color="darkred", linestyle="--", linewidth=1)
@@ -251,7 +251,7 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
         
         for indic in indicateurs_a_tracer:
             if indic in pivot.columns and pivot[indic].notna().any():
-                sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, axe=axe, linewidth=3)
+                sns.lineplot(data=pivot, x="Exercice", y=indic, marker="o", label=indic, ax=axe, linewidth=3)
                 
                 if indic == "Capacité de désendettement (années)":
                     axe.axhline(12, color="darkred", linestyle="--", linewidth=1)
