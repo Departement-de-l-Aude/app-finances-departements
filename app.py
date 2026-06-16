@@ -100,7 +100,7 @@ max_annee = int(df["Exercice"].max())
 
 
 
-# Fonction de génération des graphiques dynamique
+# Fonction de génération des graphiques
 def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher_les_deux=False):
     n = len(indicateurs)
     colonnes = 2 if n >= 2 else 1
@@ -135,7 +135,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
         else:
             titre_axe = indic
                 
-        axe.set_title(titre_axe, fontsize=15, fontweight="bold", alpha=0.75)
+        axe.set_title(titre_axe, fontsize=15, fontweight="bold", alpha=0.85)
         axe.set_xticks(df_plot["Exercice"].unique())
         
         if indic == "Capacité de désendettement (années)":
@@ -152,6 +152,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
 
     plt.tight_layout()
     return fig
+
 
 
 def ajouter_etiquettes_desendettement(axe, df_donnees):
