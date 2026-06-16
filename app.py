@@ -147,10 +147,10 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
             if axe.get_legend() is not None:
                 axe.legend(loc="best", fontsize="small")
 
-    for j in range(n, len(axes_liste)):
-        fig.delaxes(axes_liste[j])
+    if len(axes_lise) - n > 0:    # Si on est dans le cas ou le nombre d'indicateurs est pair, on supprime le dernier axe
+        fig.delaxes(axes_liste[-1])
 
-    plt.tight_layout()
+   
     return fig
 
 
