@@ -130,13 +130,12 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
             
         sns.lineplot(data=df_plot, x="Exercice", y=indic, hue="Nom 2024 Département", marker="o", ax=axe, linewidth=3)
 
-        if par_habitant:
-            if (not afficher_les_deux and indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)"]):
-                titre_axe = f"{indic} (€/hab)"
+        if par_habitant and not afficher_les_deux and indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)"]:
+            titre_axe = f"{indic} (€/hab)"
         else:
             titre_axe = indic
                 
-        axe.set_title(titre_axe, fontsize=15, fontweight="semibold")
+        axe.set_title(titre_axe, fontsize=15)
         axe.set_xticks(df_plot["Exercice"].unique())
         
         if indic == "Capacité de désendettement (années)":
