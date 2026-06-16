@@ -21,9 +21,13 @@ st.set_page_config(page_title="Analyse financière départementale", layout="wid
 
 
 
+# Indicateurs cochés par défaut à l'ouverture du site
+indicateurs_fait_main = [
+    "Capacité de désendettement (années)", 
+    "Poids des AIS (%)"
+]
 
-
-# --- STRUCTURE HIÉRARCHIQUE DES CATÉGORIES ET SOUS-CATÉGORIES ---
+# Catégories et sous-catégories d'indicateurs
 structure_indicateurs = {
     "1️⃣ Épargne & Résultats": {
         "Indicateurs": [
