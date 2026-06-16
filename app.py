@@ -103,17 +103,17 @@ max_annee = int(df["Exercice"].max())
 # Fonction de génération des graphiques dynamique
 def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher_les_deux=False):
     n = len(indicateurs)
-    cols = 2 if n >= 2 else 1
+    colonnes = 2 if n >= 2 else 1
     
     if n % 2 == 0:
-        rows = n // cols
+        lignes = n // colonnes
     else:
-        rows = (n+1) // 2    # On aura un graphe "seul" en + en bas
+        lignes = (n+1) // 2    # On aura un graphe "seul" en + en bas
 
-    fig, axes = plt.subplots(rows, cols, figsize=(3*10, 4*10))
+    fig, axes = plt.subplots(lignes, colonnes, figsize=(3*6*colonnes, 4*6*colonnes))
     fig.suptitle(titre, fontsize=25, fontweight="bold", y=1.02) 
 
-    if rows == 1 and cols == 1:
+    if lignes == 1 and colonnes == 1:
         axes_flat = [axes]
     else:
         axes_flat = axes.flatten()
@@ -148,16 +148,16 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
 
 
 def ajouter_etiquettes_desendettement(ax, df_donnees):
-    for index, row in df_donnees.iterrows():
-        if row.get("Capacité de désendettement (années)", -1) == 0:
-            vraie_valeur = row.get("Capacité de désendettement (vraie)", np.nan)
+    for index, ligne in df_donnees.iterrows():
+        if ligne.get("Capacité de désendettement (années)", -1) == 0:
+            vraie_valeur = ligne.get("Capacité de désendettement (vraie)", np.nan)
             if pd.isna(vraie_valeur) or np.isinf(vraie_valeur):
                 vraie_valeur_texte = "inf"
             else:
                 vraie_valeur_texte = f"{vraie_valeur:.1f}"
             
             ax.annotate(
-                vraie_valeur_texte, xy=(row["Exercice"], 0), xytext=(0, 10),
+                vraie_valeur_texte, xy=(ligne["Exercice"], 0), xytext=(0, 10),
                 textcoords="offset points", ha="center", va="bottom",
                 fontsize=10, color="white", fontweight="bold",
                 bbox=dict(boxstyle="round,pad=0.5", fc="black", alpha=0.75, edgecolor="red", linewidth=3)
@@ -185,8 +185,8 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
     
     nom_dep = pivot["Nom 2024 Département"].iloc[0]
 
-    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda row: row.get("Encours de dette", 0) / row["Epargne brute"] if row.get("Epargne brute", 0) != 0 else np.nan, axis=1)
-    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda row: row.get("Encours de dette", 0) / row["Epargne brute"] if row.get("Epargne brute", 0) > 0 else 0, axis=1)
+    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) != 0 else np.nan, axis=1)
+    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)
     pivot["Epargne brute (M€)"] = pivot.get("Epargne brute", 0) / 1000000
     pivot["Epargne nette (M€)"] = pivot.get("Epargne nette", 0) / 1000000
     pivot["Dépenses sociales (AIS)"] = pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)
@@ -201,12 +201,12 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
                 indicateurs_a_tracer.append(ind)
                 if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
                     nom_hab = f"{ind} (€/hab)"
-                    pivot[nom_hab] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+                    pivot[nom_hab] = pivot.apply(lambda ligne: ligne[ind] / ligne["Population totale"] if pd.notnull(ligne.get("Population totale")) and ligne["Population totale"] > 0 else np.nan, axis=1)
                     indicateurs_a_tracer.append(nom_hab)
         else:
             for ind in indicateurs:
                 if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
-                    pivot[ind] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+                    pivot[ind] = pivot.apply(lambda ligne: ligne[ind] / ligne["Population totale"] if pd.notnull(ligne.get("Population totale")) and ligne["Population totale"] > 0 else np.nan, axis=1)
 
     for ind in indicateurs_a_tracer:
         if ind not in pivot.columns:
@@ -301,8 +301,8 @@ def comparer_departements(df, liste_codes_dep, intervalle_annees, indicateurs, p
 
     pivot = df_temp[serie_filtre].pivot_table(index=idx_cols, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
-    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda row: row.get("Encours de dette", 0) / row["Epargne brute"] if row.get("Epargne brute", 0) != 0 else np.nan, axis=1)
-    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda row: row.get("Encours de dette", 0) / row["Epargne brute"] if row.get("Epargne brute", 0) > 0 else 0, axis=1)
+    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) != 0 else np.nan, axis=1)
+    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)
     pivot["Epargne brute (M€)"] = pivot.get("Epargne brute", 0) / 1000000
     pivot["Epargne nette (M€)"] = pivot.get("Epargne nette", 0) / 1000000
     pivot["Dépenses sociales (AIS)"] = pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)
@@ -317,12 +317,12 @@ def comparer_departements(df, liste_codes_dep, intervalle_annees, indicateurs, p
                 indicateurs_a_tracer.append(ind)
                 if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
                     nom_hab = f"{ind} (€/hab)"
-                    pivot[nom_hab] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+                    pivot[nom_hab] = pivot.apply(lambda ligne: ligne[ind] / ligne["Population totale"] if pd.notnull(ligne.get("Population totale")) and ligne["Population totale"] > 0 else np.nan, axis=1)
                     indicateurs_a_tracer.append(nom_hab)
         else:
             for ind in indicateurs:
                 if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
-                    pivot[ind] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+                    pivot[ind] = pivot.apply(lambda ligne: ligne[ind] / ligne["Population totale"] if pd.notnull(ligne.get("Population totale")) and ligne["Population totale"] > 0 else np.nan, axis=1)
 
     for ind in indicateurs_a_tracer:
         if ind not in pivot.columns:
@@ -355,8 +355,8 @@ def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, me
 
     pivot = df_temp[serie_filtre].pivot_table(index=idx_cols, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
-    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda row: row.get("Encours de dette", 0) / row["Epargne brute"] if row.get("Epargne brute", 0) != 0 else np.nan, axis=1)
-    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda row: row.get("Encours de dette", 0) / row["Epargne brute"] if row.get("Epargne brute", 0) > 0 else 0, axis=1)
+    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) != 0 else np.nan, axis=1)
+    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)
     pivot["Epargne brute (M€)"] = pivot.get("Epargne brute", 0) / 1000000
     pivot["Epargne nette (M€)"] = pivot.get("Epargne nette", 0) / 1000000
     pivot["Poids des AIS (%)"] = ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100
@@ -370,12 +370,12 @@ def comparer_departement_strate(df, code_dep, intervalle_annees, indicateurs, me
                 indicateurs_a_tracer.append(ind)
                 if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
                     nom_hab = f"{ind} (€/hab)"
-                    pivot[nom_hab] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+                    pivot[nom_hab] = pivot.apply(lambda ligne: ligne[ind] / ligne["Population totale"] if pd.notnull(ligne.get("Population totale")) and ligne["Population totale"] > 0 else np.nan, axis=1)
                     indicateurs_a_tracer.append(nom_hab)
         else:
             for ind in indicateurs:
                 if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
-                    pivot[ind] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+                    pivot[ind] = pivot.apply(lambda ligne: ligne[ind] / ligne["Population totale"] if pd.notnull(ligne.get("Population totale")) and ligne["Population totale"] > 0 else np.nan, axis=1)
 
     for ind in indicateurs_a_tracer:
         if ind not in pivot.columns:
@@ -422,8 +422,8 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
 
     pivot = df_temp[serie_filtre].pivot_table(index=idx_cols, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
-    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda row: row.get("Encours de dette", 0) / row["Epargne brute"] if row.get("Epargne brute", 0) != 0 else np.nan, axis=1)
-    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda row: row.get("Encours de dette", 0) / row["Epargne brute"] if row.get("Epargne brute", 0) > 0 else 0, axis=1)
+    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) != 0 else np.nan, axis=1)
+    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)
     pivot["Epargne brute (M€)"] = pivot.get("Epargne brute", 0) / 1000000
     pivot["Epargne nette (M€)"] = pivot.get("Epargne nette", 0) / 1000000
     pivot["Poids des AIS (%)"] = ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100
@@ -437,12 +437,12 @@ def comparer_departement_strate_metro(df, code_dep, intervalle_annees, indicateu
                 indicateurs_a_tracer.append(ind)
                 if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
                     nom_hab = f"{ind} (€/hab)"
-                    pivot[nom_hab] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+                    pivot[nom_hab] = pivot.apply(lambda ligne: ligne[ind] / ligne["Population totale"] if pd.notnull(ligne.get("Population totale")) and ligne["Population totale"] > 0 else np.nan, axis=1)
                     indicateurs_a_tracer.append(nom_hab)
         else:
             for ind in indicateurs:
                 if ind not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"] and ind in pivot.columns:
-                    pivot[ind] = pivot.apply(lambda row: row[ind] / row["Population totale"] if pd.notnull(row.get("Population totale")) and row["Population totale"] > 0 else np.nan, axis=1)
+                    pivot[ind] = pivot.apply(lambda ligne: ligne[ind] / ligne["Population totale"] if pd.notnull(ligne.get("Population totale")) and ligne["Population totale"] > 0 else np.nan, axis=1)
 
     for ind in indicateurs_a_tracer:
         if ind not in pivot.columns:
