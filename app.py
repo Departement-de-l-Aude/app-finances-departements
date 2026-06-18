@@ -90,7 +90,7 @@ dico_indicateurs = {
             "Capacité de désendettement (années)", "Crédits de trésorerie", "Dépôts au Trésor"
         ]
     },
-    "caca boudin" : { "indicatos : ["Annuité de la dette", "Charges financières"] }
+    "caca boudin": { "indicatos" : ["Annuité de la dette", "Charges financières"] }
     
 }
 
