@@ -79,7 +79,7 @@ dico_indicateurs = {
     },
     "4️⃣ Social & Solidarité": {
         "Indicateurs": [
-            "Allocations APA", "Allocations PCH", "Allocations RSA", "Poids des AIS (%)", "CNSA", "Frais d'hébergement"
+            "Allocations APA", "Allocations PCH", "Allocations RSA", "CNSA", "Frais d'hébergement"
         ]
     },
     "5️⃣ Dette & Trésorerie": {
@@ -87,11 +87,14 @@ dico_indicateurs = {
             "Annuité de la dette", "Charges financières", "Remboursements d'emprunts hors GAD", "Emprunts hors GAD",
             "Fonds de soutien aux emprunts à risque", "Flux net de dette", "Encours de dette",
             "Encours de dette - Dettes bancaires et assimilées", "Encours de dette - Dépôts et cautionnements reçus",
-            "Capacité de désendettement (années)", "Crédits de trésorerie", "Dépôts au Trésor"
+            "Crédits de trésorerie", "Dépôts au Trésor"
         ]
     },
-    "caca boudin": { "indicatos" : ["Annuité de la dette", "Charges financières"] }
-    
+    "Autres": {
+        "Indicateurs calculés via les données ofgl": [
+             "Capacité de désendettement (années)", "Poids des AIS (%)"
+        ]
+    }    
 }
 
 # On stocke les variables min_annee et max_annee
