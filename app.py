@@ -24,8 +24,8 @@ st.set_page_config(page_title="Analyse financière départementale", layout="wid
 
 
 
-# Indicateurs cochés par défaut à l'ouverture du site
-indicateurs_fait_main = [
+# Indicateurs calculés en utilisant les données OFGL
+indicateurs_calculés = [
     "Capacité de désendettement (années)", 
     "Poids des AIS (%)"
 ]
@@ -154,7 +154,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     return fig
 
 
-
+# Fonction auxilière rajoutée en cours de route
 def ajouter_etiquettes_desendettement(axe, df_donnees):
     for index, ligne in df_donnees.iterrows():
         if ligne.get("Capacité de désendettement (années)", -1) == 0:
@@ -173,7 +173,11 @@ def ajouter_etiquettes_desendettement(axe, df_donnees):
 
 
 
-# LES FONCTIONS "COEUR" DU CODE
+##########
+#####
+# FONCTIONS "COEUR" DU CODE
+#####
+##########
 def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, par_habitant=False, afficher_les_deux=False):
     df_temp = df_arg.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
@@ -182,22 +186,19 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Code Insee 2024 Département"] == code_dep) & (annee_min_temp <= df_temp["Exercice"] <= annee_max_temp)
                    
-    idx_cols = ["Exercice", "Nom 2024 Département"]
-    if "Population totale" in df_temp.columns: idx_cols.append("Population totale")
+    index_colonnes = ["Exercice", "Nom 2024 Département", "Population totale"]
 
-    pivot = df_temp[serie_filtre].pivot_table(index=idx_cols, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
-
-    if pivot.empty: return None, pd.DataFrame()
+    pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
     
-    nom_dep = pivot["Nom 2024 Département"].iloc[0]
+    nom_dep = pivot["Nom 2024 Département"].iloc[0]    # On récupère le nom du département pour plus tard l'afficher et pas avoir que les numéros de départements
 
-    pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) != 0 else np.nan, axis=1)
-    pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)
-    pivot["Epargne brute (M€)"] = pivot.get("Epargne brute", 0) / 1000000
-    pivot["Epargne nette (M€)"] = pivot.get("Epargne nette", 0) / 1000000
-    pivot["Dépenses sociales (AIS)"] = pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)
-    pivot["Poids des AIS (%)"] = (pivot["Dépenses sociales (AIS)"] / pivot.get("Dépenses de fonctionnement", 1)) * 100
-
+   if "Capacité de désendettement (années)" in indicateurs:
+        pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda ligne:ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) != 0 else np.nan, axis=1)    # axis=1 car on lit 
+        pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)         # ligne par ligne,
+                                                                                                                                                                                                        # de gauche à droite    
+    if "Poids des AIS (%)" in indicateurs:
+        pivot["Poids des AIS (%)"] = ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100
+        
     indicateurs_a_tracer = indicateurs.copy()
     
     if par_habitant and "Population totale" in pivot.columns:
@@ -302,10 +303,10 @@ def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateur
                    (df_temp["Code Insee 2024 Département"].isin(liste_codes_dep)) & \
                    (df_temp["Exercice"] >= annee_min_temp) & (df_temp["Exercice"] <= annee_max_temp)
                    
-    idx_cols = ["Exercice", "Nom 2024 Département"]
-    if "Population totale" in df_temp.columns: idx_cols.append("Population totale")
+    index_colonnes = ["Exercice", "Nom 2024 Département"]
+    if "Population totale" in df_temp.columns: index_colonnes.append("Population totale")
 
-    pivot = df_temp[serie_filtre].pivot_table(index=idx_cols, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
+    pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
     pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) != 0 else np.nan, axis=1)
     pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)
@@ -356,10 +357,10 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
                    (df_temp["Strate population 2024"] == strate) & \
                    (df_temp["Exercice"] >= annee_min_temp) & (df_temp["Exercice"] <= annee_max_temp)
                    
-    idx_cols = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Nom 2024 Région"]
-    if "Population totale" in df_temp.columns: idx_cols.append("Population totale")
+    index_colonnes = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Nom 2024 Région"]
+    if "Population totale" in df_temp.columns: index_colonnes.append("Population totale")
 
-    pivot = df_temp[serie_filtre].pivot_table(index=idx_cols, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
+    pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
     pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) != 0 else np.nan, axis=1)
     pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)
@@ -428,10 +429,10 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
                    ((df_temp["Outre-mer"] == "Non") | (df_temp["Code Insee 2024 Département"] == code_dep)) & \
                    (df_temp["Exercice"] >= annee_min_temp) & (df_temp["Exercice"] <= annee_max_temp)
                    
-    idx_cols = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Strate population 2024", "Outre-mer", "Nom 2024 Région"]
-    if "Population totale" in df_temp.columns: idx_cols.append("Population totale")
+    index_colonnes = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Strate population 2024", "Outre-mer", "Nom 2024 Région"]
+    if "Population totale" in df_temp.columns: index_colonnes.append("Population totale")
 
-    pivot = df_temp[serie_filtre].pivot_table(index=idx_cols, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
+    pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()
 
     pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) != 0 else np.nan, axis=1)
     pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)
@@ -519,7 +520,7 @@ for main_cat, subcats in sorted(dico_indicateurs.items()):
             if subcat_name != "Indicateurs":
                 st.markdown(f"**{subcat_name}**")
             
-            defauts_cat = [indic for indic in indicators_list if indic in indicateurs_fait_main]
+            defauts_cat = [indic for indic in indicators_list if indic in indicateurs_calculés]
             
             choix = st.multiselect(
                 label=subcat_name,
