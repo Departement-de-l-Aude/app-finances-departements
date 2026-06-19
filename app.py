@@ -261,7 +261,7 @@ def analyser_un_departement(df, code_dep, intervalle_annees, indicateurs, par_ha
                 if indic == "Capacité de désendettement (années)":
                     axe.axhline(12, color="darkred", linestyle="--", linewidth=1)
                     axe.axhline(9, color="red", linestyle="--", linewidth=1)
-                   axe.axhline(6, color="darkorange", linestyle="--", linewidth=1)
+                    axe.axhline(6, color="darkorange", linestyle="--", linewidth=1)
                     axe.axhline(3, color="green", linestyle="--", linewidth=1)
 
         axe.set_ylabel("Valeur")
