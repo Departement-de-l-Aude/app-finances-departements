@@ -192,7 +192,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
     
     nom_dep = pivot["Nom 2024 Département"].iloc[0]    # On récupère le nom du département pour plus tard l'afficher et pas avoir que les numéros de départements
 
-   if "Capacité de désendettement (années)" in indicateurs:
+    if "Capacité de désendettement (années)" in indicateurs:
         pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda ligne:ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) != 0 else np.nan, axis=1)    # axis=1 car on lit 
         pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)         # ligne par ligne,
                                                                                                                                                                                                         # de gauche à droite    
