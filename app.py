@@ -712,5 +712,5 @@ elif menu == "Département comparé à la moyenne de sa strate et à la moyenne 
         )
         # ----------------------------
         st.pyplot(fig)
-       st.subheader("📋 Données brutes")
+        st.subheader("📋 Données brutes")
         st.dataframe(data, use_container_width=True)
