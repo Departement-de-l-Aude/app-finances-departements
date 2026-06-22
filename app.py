@@ -292,7 +292,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
         plt.tight_layout()
 
     colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
-    df_final = pivot[[c for c in colonnes if c in pivot.columns]].round(1).sort_values(by=["Exercice"])
+    df_final = pivot.round(1).sort_values(by=["Exercice"])
     return fig, df_final
 
 
