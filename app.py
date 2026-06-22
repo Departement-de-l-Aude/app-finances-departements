@@ -252,14 +252,14 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                 else:
                     ax2.plot([], [], label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
                     
-        ax1.set_title("Valeurs brutes", fontsize=15, fontweight="semibold")
-        ax2.set_title("Valeurs normalisées (€/hab)", fontsize=15, fontweight="semibold")
+        ax1.set_title("Valeurs brutes", fontsize=15, fontweight="bold", alpha=0.85)
+        ax2.set_title("Valeurs normalisées (€/hab)", fontsize=15, fontweight="bold", alpha=0.85)
         ax1.set_ylabel("Valeurs")
         ax2.set_ylabel("Valeurs (€/hab)")
         ax1.set_xlabel("Exercice")
         ax2.set_xlabel("Exercice")
-        ax1.legend(loc='best', fontsize=10)
-        ax2.legend(loc='best', fontsize=10)
+        ax1.legend(loc='best', fontsize="small")
+        ax2.legend(loc='best', fontsize="small")
         ax1.set_xticks(pivot["Exercice"].unique())
         ax2.set_xticks(pivot["Exercice"].unique())
         plt.tight_layout()
@@ -283,7 +283,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
         axe.set_ylabel("Valeur")
         axe.set_xlabel("Exercice")
         axe.set_xticks(pivot["Exercice"].unique())
-        axe.legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=12)
+        axe.legend(bbox_to_anchor=(1.02, 1), loc='best', fontsize="small")
         plt.tight_layout()
 
     colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
