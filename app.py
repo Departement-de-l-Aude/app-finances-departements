@@ -230,8 +230,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                 if indic_temp not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
                     pivot[indic_temp] = pivot.apply(lambda ligne: ligne[indic_temp] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)    # remarque : on pourrait mettre
                                                                                                                                                     # un != (car NaN != 0 renvoit True et derrière ça marcherait)
-                                                                                                                                                    # au lieu de > mais ce ne serait pas "propre"
-    a_des_normalises = any("(€/hab)" in indic_temp for indic_temp in indicateurs_a_tracer)
+    a_des_normalises = any("(€/hab)" in indic_temp for indic_temp in indicateurs_a_tracer)                                                          # au lieu de > mais ce ne serait pas "propre"
 
     if afficher_les_deux and a_des_normalises:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
