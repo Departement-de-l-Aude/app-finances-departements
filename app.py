@@ -237,15 +237,15 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
         for indic_temp in indicateurs_a_tracer:
             if pivot[indic_temp].notna().any():    # Si on a au moins une donnée à afficher
                 if "(€/hab)" not in indic_temp:
-                    sns.lineplot(data=pivot, x="Exercice", y=indic_temp, marker="o", label=indic_temp, ax=ax1, linewidth=3)
-                else:
-                    sns.lineplot(data=pivot, x="Exercice", y=indic_temp, marker="o", label=indic_temp, ax=ax2, linewidth=3)
-                    
-                    if indic_temp == "Capacité de désendettement (années)":
+                     sns.lineplot(data=pivot, x="Exercice", y=indic_temp, marker="o", label=indic_temp, ax=ax1, linewidth=3)
+                     if indic_temp == "Capacité de désendettement (années)":
                         ax1.axhline(12, color="darkred", linestyle="--", linewidth=1)
                         ax1.axhline(9, color="red", linestyle="--", linewidth=1)
                         ax1.axhline(6, color="darkorange", linestyle="--", linewidth=1)
                         ax1.axhline(3, color="green", linestyle="--", linewidth=1)
+                else:
+                    sns.lineplot(data=pivot, x="Exercice", y=indic_temp, marker="o", label=indic_temp, ax=ax2, linewidth=3)
+                    
             else:    # Si on a vraiment rien à afficher
                 if "(€/hab)" not in indic_temp:
                     ax1.plot([], [], label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
@@ -263,9 +263,10 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
         ax1.set_xticks(pivot["Exercice"].unique())
         ax2.set_xticks(pivot["Exercice"].unique())
         plt.tight_layout()
+        
     else:
-        fig, axe = plt.subplots(figsize=(14, 8))
-        fig.suptitle(f"Comparaison d'indicateurs pour : {nom_dep}", fontsize=22, fontweight="bold", y=0.98)
+        fig, axe = plt.subplots(figsize=(8, 6))
+        fig.suptitle(f"Comparaison d'indicateurs du département : {nom_dep}", fontsize=24, fontweight="bold", y=0.9925)
         
         for indic_temp in indicateurs_a_tracer:
             if indic_temp in pivot.columns and pivot[indic_temp].notna().any():
@@ -276,7 +277,9 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                     axe.axhline(9, color="red", linestyle="--", linewidth=1)
                     axe.axhline(6, color="darkorange", linestyle="--", linewidth=1)
                     axe.axhline(3, color="green", linestyle="--", linewidth=1)
-
+            else:
+                axe.plot([], [], label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
+                
         axe.set_ylabel("Valeur")
         axe.set_xlabel("Exercice")
         axe.set_xticks(pivot["Exercice"].unique())
