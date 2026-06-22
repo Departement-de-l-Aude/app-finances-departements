@@ -184,7 +184,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
     code_dep = str(code_dep)
     annee_min_temp, annee_max_temp = intervalle_annees
     
-    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Code Insee 2024 Département"] == code_dep) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
+    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Code Insee 2024 Département"] == code_dep) & (annee_min_temp <= df_temp["Exercice"] <= annee_max_temp)
                    
     index_colonnes = ["Exercice", "Nom 2024 Département", "Population totale"]
 
@@ -194,8 +194,8 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
 
     if "Capacité de désendettement (années)" in indicateurs:
         pivot["Capacité de désendettement (vraie)"] = pivot.apply(lambda ligne:ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) != 0 else np.nan, axis=1)    # axis=1 car on lit 
-        pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)         # ligne par ligne,
-                                                                                                                                                                                                        # de gauche à droite    
+        pivot["Capacité de désendettement (années)"] = pivot.apply(lambda ligne: ligne.get("Encours de dette", 0) / ligne["Epargne brute"] if ligne.get("Epargne brute", 0) > 0 else 0, axis=1)        # ligne par ligne,
+                                                                                                                                                                                                       # de gauche à droite    
     if "Poids des AIS (%)" in indicateurs:
         pivot["Poids des AIS (%)"] = ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100
         
