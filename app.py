@@ -258,8 +258,8 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
         # Si on a sélectionné QUE des ratios ou des années, aucune colonne (€/hab) n'existe
         if not any("(€/hab)" in indic for indic in indicateurs_a_tracer):
             # 1. On trace une ligne invisible pour "sauver" l'axe des années en abscisse
-            ax2.plot(pivot["Exercice"], [1]*len(pivot), alpha=1) 
-            ax2.text(pivot["Exercice"].median(), 0, "Données non normalisables", ha='center', va='center', fontsize=18, color="gray")
+            ax2.plot(pivot["Exercice"], [0]*len(pivot), alpha=1) 
+            ax2.text(0.5, 0.5, "Données incohérentes à normaliser", ha='center', va='center', fontsize=18, color="gray")
             # 3. On efface les graduations de l'axe Y qui ne servent à rien
             ax2.set_yticks([]) 
         # 🚨 FIN DE LA MODIF 🚨
