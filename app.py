@@ -251,9 +251,9 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                     
             else:    # Si on a vraiment rien à afficher
                 if "(€/hab)" not in indic_temp:
-                    ax1.plot([], [], label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
+                    ax1.plot([],  x="Exercice", label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
                 else:
-                    ax2.plot([], [], label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
+                    ax2.plot([],  x="Exercice", label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
                     
         ax1.set_title("Valeurs brutes", fontsize=15, fontweight="bold", alpha=0.85)
         ax2.set_title("Valeurs normalisées (€/hab)", fontsize=15, fontweight="bold", alpha=0.85)
