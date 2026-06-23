@@ -294,7 +294,6 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
         axe.legend(loc='best', fontsize="small")
         plt.tight_layout()
 
-    colonnes = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
     df_final = pivot.round(1).sort_values(by=["Exercice"])
     return fig, df_final
 
