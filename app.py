@@ -171,7 +171,7 @@ def ajouter_etiquettes_desendettement(axe, df_donnees):
             else:
                 vraie_valeur_texte = int(vraie_valeur)
             
-            offset_y = -15 if val_tracee == 15 else 15
+            offset_y = -20 if val_tracee == 15 else 20
             va_align = "bottom" if val_tracee == 15 else "top"
             
             axe.annotate(
