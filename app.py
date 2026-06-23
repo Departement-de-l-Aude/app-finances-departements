@@ -315,7 +315,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                     axe.axhline(9, color="red", linestyle="--", linewidth=1)
                     axe.axhline(6, color="darkorange", linestyle="--", linewidth=1)
                     axe.axhline(3, color="green", linestyle="--", linewidth=1)
-                    ajouter_etiquettes_desendettement(ax1, pivot)
+                    ajouter_etiquettes_desendettement(axe, pivot)
             else:
                 axe.plot([], [], label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
         
