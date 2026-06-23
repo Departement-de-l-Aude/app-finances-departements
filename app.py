@@ -254,15 +254,15 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                     sns.lineplot(data=pivot, x="Exercice", y=indic_temp, marker="o", label=indic_temp, ax=ax2, linewidth=3)
                     
             else:    # Si on a vraiment rien à afficher, que ce soit parce qu'on a jamais trouvé la colonne ou que les données n'étaient pas normalisables
+                 if "(€/hab)" in indic_temp and any(m in indic_temp for m in ["Capacité", "Poids"]):
+                    label_txt = f"⚠️ {indic_temp.replace(' (€/hab)', '')} (Non normalisable)"
+                else:
+                    label_txt = f"⚠️ {indic_temp} indisponible"
+                
                 if "(€/hab)" not in indic_temp:
                     ax1.plot(pivot["Exercice"], pivot[indic_temp], label=label_txt, color="gray", linestyle="--")
                 else:
                     ax2.plot(pivot["Exercice"], pivot[indic_temp], label=label_txt, color="gray", linestyle="--")
-
-                if "(€/hab)" in indic_temp and any(m in indic_temp for m in ["Capacité", "Poids"]):
-                    label_txt = f"⚠️ {indic_temp.replace(' (€/hab)', '')} (Non normalisable)"
-                else:
-                    label_txt = f"⚠️ {indic_temp} indisponible"
 
         ax1.set_title("Valeurs brutes", fontsize=15, fontweight="bold", alpha=0.85)
         ax2.set_title("Valeurs normalisées (€/hab)", fontsize=15, fontweight="bold", alpha=0.85)
