@@ -169,7 +169,7 @@ def ajouter_etiquettes_desendettement(axe, df_donnees):
             if pd.isna(vraie_valeur) or vraie_valeur == float('inf'):
                 vraie_valeur_texte = "Infini\n(Épargne = 0)"
             else:
-                vraie_valeur_texte = vraie_valeur:.1f
+                vraie_valeur_texte = int(vraie_valeur)
             
             offset_y = -15 if val_tracee == 15 else 15
             va_align = "bottom" if val_tracee == 15 else "top"
