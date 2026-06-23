@@ -161,17 +161,29 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
 # Fonction auxilière rajoutée en cours de route
 def ajouter_etiquettes_desendettement(axe, df_donnees):
     for index, ligne in df_donnees.iterrows():
-        if ligne.get("Capacité de désendettement (années)", -1) == 0:
-            vraie_valeur = ligne["Capacité de désendettement (vraie)"]
-            if pd.isna(vraie_valeur) or np.isinf(vraie_valeur):
-                vraie_valeur_texte = "inf"
+        val_tracee = ligne.get("Capacité de désendettement (années)", np.nan)
+        vraie_valeur = ligne.get("Capacité de désendettement (vraie)", np.nan)
+        
+        if pd.notna(val_tracee) and (val_tracee == 15 or val_tracee == -3):
+            
+            if pd.isna(vraie_valeur) or vraie_valeur == float('inf'):
+                vraie_valeur_texte = "Infini\n(Épargne 0)"
             else:
-                vraie_valeur_texte = f"{vraie_valeur:.1f}"
+                vraie_valeur_texte = f"{vraie_valeur:.1f} ans"
+            
+            offset_y = 12 if val_tracee == 15 else -12
+            va_align = "bottom" if val_tracee == 15 else "top"
             
             axe.annotate(
-                vraie_valeur_texte, xy=(ligne["Exercice"], 0), xytext=(0, 10),
-                textcoords="offset points", ha="center", va="bottom",
-                fontsize=10, color="white", fontweight="bold",
+                vraie_valeur_texte, 
+                xy=(ligne["Exercice"], val_tracee), 
+                xytext=(0, offset_y),
+                textcoords="offset points", 
+                ha="center", 
+                va=va_align,
+                fontsize=10, 
+                color="white", 
+                fontweight="bold",
                 bbox=dict(boxstyle="round,pad=0.5", fc="black", alpha=0.75, edgecolor="red", linewidth=3)
             )
 
