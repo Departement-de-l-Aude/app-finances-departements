@@ -131,8 +131,8 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     for i, indic in enumerate(indicateurs):
         axe_indice_i = axes_liste[i]
 
+        # Si les données sont manquantes ou non-normalisables, on personnalise le message d'erreur, on affiche ce qu'il faut et on passe à l'indicateur suivant
         if indic not in df_plot.columns or df_plot[indic].isna().all():
-            # Si les données sont manquantes ou non-normalisables, on personnalise le message d'erreur
             if "(€/hab)" in indic and (indic.replace(' (€/hab)', '') in indicateurs_calculés):
                 label_txt = f"⚠️ {indic.replace(' (€/hab)', '')} non normalisable ⚠️"
             else:
@@ -142,7 +142,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
             axe_indice_i.text(0.5, 0.5, label_txt, fontsize=12, fontweight="bold", va="center", ha="center")
             continue
             
-        sns.lineplot(data=df_plot, x="Exercice", y=indic, hue="Nom 2024 Département", marker="o", ax=axe_indice_i, linewidth=3)
+        sns.lineplot(data=df_plot, x="Exercice", y=indic, hue="Nom 2024 Département", markers=True, ax=axe_indice_i, linewidth=3)
 
         if par_habitant and not afficher_les_deux and indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)"]:
             titre_axe = f"{indic} (€/hab)"
