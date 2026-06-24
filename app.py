@@ -116,7 +116,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     if n % 2 == 0:
         lignes = n // colonnes
     else:
-        lignes = (n+1) // 2    # On aura un graphe "seul" en + en bas
+        lignes = (n+1) // 2    # On aura un graphe vide "seul" en + en bas
 
     fig, axes = plt.subplots(lignes, colonnes, figsize=(4*2*colonnes, 3*2*lignes))    # Affichage des graphiques en 4:3 avec un coeff de taille en +
     fig.suptitle(titre, fontsize=24, fontweight="bold", y=0.9925) 
@@ -129,8 +129,18 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
     for i, indic_temp in enumerate(indicateurs):
         axe = axes_liste[i]
 
-        if indic_temp not in df_plot.columns:
-            axe.set_title(f"{indic_temp}\n⚠️ Données indisponibles", fontsize=12, color="gray")
+        if indic_temp not in df_plot.columns or df_plot[indic_temp].isna().all():
+            if "(€/hab)" in indic_temp and ("Capacité" in indic_temp or "Poids" in indic_temp):
+                label_txt = f"⚠️ {indic_temp.replace(' (€/hab)', '')} non normalisable"
+            else:
+                label_txt = f"⚠️ {indic_temp} indisponible"
+            
+            axe.set_title(indic_temp, fontsize=15, fontweight="bold", alpha=0.85, color="gray")
+            if "Exercice" in df_plot.columns and not df_plot["Exercice"].isna().all():    # On veut quand afficher un graphe propre même s'il est vide
+                axe.plot(df_plot["Exercice"], [np.nan]*len(df_plot), label=label_txt, color="gray", linestyle="--")
+                axe.set_xlim(df_plot["Exercice"].min() - 0.2, df_plot["Exercice"].max() + 0.2)
+                axe.set_xticks(df_plot["Exercice"].unique())
+            axe.legend(loc="best", fontsize="small")
             continue
             
         sns.lineplot(data=df_plot, x="Exercice", y=indic_temp, hue="Nom 2024 Département", marker="o", ax=axe, linewidth=3)
@@ -141,6 +151,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
             titre_axe = indic_temp
                 
         axe.set_title(titre_axe, fontsize=15, fontweight="bold", alpha=0.85)
+        axe.set_xlim(df_plot["Exercice"].min() - 0.2, df_plot["Exercice"].max() + 0.2)
         axe.set_xticks(df_plot["Exercice"].unique())
         
         if indic_temp == "Capacité de désendettement (années)":
@@ -201,7 +212,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
     annee_min_temp, annee_max_temp = intervalle_annees
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Code Insee 2024 Département"] == code_dep) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
-                   
+                    
     index_colonnes = ["Exercice", "Nom 2024 Département", "Population totale"]
 
     pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()    # aggfunc permet d'avoir la somme de toutes les lignes d'épargne nette par exemple
@@ -227,8 +238,8 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                 return -3
             return val       
         pivot["Capacité de désendettement (années)"] = pivot["Capacité de désendettement (vraie)"].apply(borner) 
-                                                                                                                                                                                                
-    if "Poids des AIS (%)" in indicateurs:                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+    if "Poids des AIS (%)" in indicateurs:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
         pivot["Poids des AIS (%)"] = np.where(
             pivot.get("Dépenses de fonctionnement", 0) != 0, 
             ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100, 
@@ -257,81 +268,15 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
             for indic_temp in indicateurs_a_tracer:
                 if indic_temp not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
                     pivot[indic_temp] = pivot.apply(lambda ligne: ligne[indic_temp] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)    # remarque : on pourrait mettre
-                else:                                                                                                                                    # un != (car NaN != 0 renvoit True et derrière ça marcherait)
-                    pivot[indic_temp] = np.nan # Pareil que précédemment                                                                                 # au lieu de > mais ce ne serait pas "propre"
+                else:                                                                                                                                                           # un != (car NaN != 0 renvoit True et derrière ça marcherait)
+                    pivot[indic_temp] = np.nan # Pareil que précédemment                                                                                                          # au lieu de > mais ce ne serait pas "propre"
    
-    if afficher_les_deux:                                                                                                                           
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
-        fig.suptitle(f"Analyse croisée du département : {nom_dep}", fontsize=24, fontweight="bold", y=0.9925)
-        
-        for indic_temp in indicateurs_a_tracer:
-            if pivot[indic_temp].notna().any():    # Si on a au moins une donnée à afficher
-                if "(€/hab)" not in indic_temp:
-                     sns.lineplot(data=pivot, x="Exercice", y=indic_temp, marker="o", label=indic_temp, ax=ax1, linewidth=3)
-                     if indic_temp == "Capacité de désendettement (années)":
-                        ax1.axhline(12, color="darkred", linestyle="--", linewidth=1)
-                        ax1.axhline(9, color="red", linestyle="--", linewidth=1)
-                        ax1.axhline(6, color="darkorange", linestyle="--", linewidth=1)
-                        ax1.axhline(3, color="green", linestyle="--", linewidth=1)
-                        ajouter_etiquettes_desendettement(ax1, pivot)
-                else:
-                    sns.lineplot(data=pivot, x="Exercice", y=indic_temp, marker="o", label=indic_temp, ax=ax2, linewidth=3)
-                    
-            else:    # Si on a vraiment rien à afficher, que ce soit parce qu'on a jamais trouvé la colonne ou que les données n'étaient pas normalisables
-                if "(€/hab)" in indic_temp and ("Capacité" in indic_temp or "Poids" in indic_temp):    # Les noms complets sont "Capacité de désendettement (années)" et "Poids des AIS (%)"
-                    label_txt = f"⚠️ {indic_temp.replace(' (€/hab)', '')} non normalisable"
-                else:
-                    label_txt = f"⚠️ {indic_temp} indisponible"
-                
-                if "(€/hab)" not in indic_temp:
-                    ax1.plot(pivot["Exercice"], pivot[indic_temp], label=label_txt, color="gray", linestyle="--")
-                else:
-                    ax2.plot(pivot["Exercice"], pivot[indic_temp], label=label_txt, color="gray", linestyle="--")
-
-        ax1.set_title("Valeurs brutes", fontsize=15, fontweight="bold", alpha=0.85)
-        ax2.set_title("Valeurs normalisées (€/hab)", fontsize=15, fontweight="bold", alpha=0.85)
-        ax1.set_ylabel("Valeurs")
-        ax2.set_ylabel("Valeurs (€/hab)")
-        ax1.set_xlabel("Exercice")
-        ax2.set_xlabel("Exercice")
-        ax1.legend(loc='best', fontsize="small")
-        ax2.legend(loc='best', fontsize="small")
-        ax1.set_xlim(pivot["Exercice"].min() - 0.2, pivot["Exercice"].max() + 0.2)    # On force l'échelle sur l'axe des abscisses pour éviter que le code crash 
-        ax2.set_xlim(pivot["Exercice"].min() - 0.2, pivot["Exercice"].max() + 0.2)    # (quand il n'y a pas de données à tracer par exemple)
-        ax1.set_xticks(pivot["Exercice"].unique())
-        ax2.set_xticks(pivot["Exercice"].unique())
-        plt.tight_layout()
-        
+    if afficher_les_deux:                                                                                                                                                           
+        titre_graphe = f"Analyse croisée du département : {nom_dep}"
     else:
-        fig, axe = plt.subplots(figsize=(16, 8))
-        fig.suptitle(f"Comparaison d'indicateurs du département : {nom_dep}", fontsize=24, fontweight="bold", y=0.9925)
+        titre_graphe = f"Comparaison d'indicateurs du département : {nom_dep}"
         
-        for indic_temp in indicateurs_a_tracer:
-            if pivot[indic_temp].notna().any():
-                sns.lineplot(data=pivot, x="Exercice", y=indic_temp, marker="o", label=indic_temp, ax=axe, linewidth=3)
-            
-                if indic_temp == "Capacité de désendettement (années)":
-                    axe.axhline(12, color="darkred", linestyle="--", linewidth=1)
-                    axe.axhline(9, color="red", linestyle="--", linewidth=1)
-                    axe.axhline(6, color="darkorange", linestyle="--", linewidth=1)
-                    axe.axhline(3, color="green", linestyle="--", linewidth=1)
-                    ajouter_etiquettes_desendettement(axe, pivot)
-            else:
-                if ("Capacité" in indic_temp or "Poids" in indic_temp):    # Les noms complets sont "Capacité de désendettement (années)" et "Poids des AIS (%)"
-                    axe.plot(pivot["Exercice"], pivot[indic_temp], label=f"⚠️ {indic_temp.replace(' (€/hab)', '')} non normalisable", color="gray", linestyle="--")
-                else:
-                    axe.plot([], [], label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
-        
-        if par_habitant:
-            axe.set_title("Valeurs normalisées (€/hab)", fontsize=20, fontweight="bold", alpha=0.85)
-            axe.set_ylabel("Valeurs (€/hab)")
-        else:
-            axe.set_title("Valeurs brutes", fontsize=20, fontweight="bold", alpha=0.85)
-            axe.set_ylabel("Valeurs")
-        axe.set_xlabel("Exercice")
-        axe.set_xticks(pivot["Exercice"].unique())
-        axe.legend(loc='best', fontsize="small")
-        plt.tight_layout()
+    fig = generer_graphiques(pivot, titre_graphe, indicateurs_a_tracer, par_habitant, afficher_les_deux)
 
     colonnes_utiles = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
     df_final = pivot[[colonne for colonne in colonnes_utiles if colonne in pivot.columns]].round(1).sort_values(by=["Exercice"])
@@ -373,7 +318,7 @@ def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateur
     annee_min_temp, annee_max_temp = intervalle_annees
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Code Insee 2024 Département"].isin(liste_codes_dep)) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
-                   
+                    
     index_colonnes = ["Exercice", "Nom 2024 Département", "Population totale"]
 
     pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()    # aggfunc permet d'avoir la somme de toutes les lignes d'épargne nette par exemple
@@ -397,8 +342,8 @@ def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateur
                 return -3
             return val        
         pivot["Capacité de désendettement (années)"] = pivot["Capacité de désendettement (vraie)"].apply(borner) 
-                                                                                                                                                                                                                                                            
-    if "Poids des AIS (%)" in indicateurs:                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+    if "Poids des AIS (%)" in indicateurs:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
         pivot["Poids des AIS (%)"] = np.where(
             pivot.get("Dépenses de fonctionnement", 0) != 0, 
             ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100, 
@@ -427,8 +372,8 @@ def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateur
             for indic_temp in indicateurs_a_tracer:
                 if indic_temp not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
                     pivot[indic_temp] = pivot.apply(lambda ligne: ligne[indic_temp] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)    # remarque : on pourrait mettre
-                else:                                                                                                                                                              # un != (car NaN != 0 renvoit True et derrière ça marcherait)
-                    pivot[indic_temp] = np.nan # Pareil que précédemment                                                                                                           # au lieu de > mais ce ne serait pas "propre"
+                else:                                                                                                                                                                                                                                                                                                                                   # un != (car NaN != 0 renvoit True et derrière ça marcherait)
+                    pivot[indic_temp] = np.nan # Pareil que précédemment                                                                                                                                                                                                                                                                                # au lieu de > mais ce ne serait pas "propre"
 
     fig = generer_graphiques(pivot, "Analyse Financière Comparative", indicateurs_a_tracer, par_habitant, afficher_les_deux)
 
@@ -455,7 +400,7 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
     region = df_dep_cible["Nom 2024 Région"].iloc[0]
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Strate population 2024"] == strate) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
-                   
+                    
     index_colonnes = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Nom 2024 Région", "Population totale"]
 
     pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()    # aggfunc permet d'avoir la somme de toutes les lignes d'épargne nette par exemple
@@ -479,8 +424,8 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
                 return -3
             return val        
         pivot["Capacité de désendettement (années)"] = pivot["Capacité de désendettement (vraie)"].apply(borner) 
-                                                                                                                                                                                                                                                            
-    if "Poids des AIS (%)" in indicateurs:                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+    if "Poids des AIS (%)" in indicateurs:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
         pivot["Poids des AIS (%)"] = np.where(
             pivot.get("Dépenses de fonctionnement", 0) != 0, 
             ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100, 
@@ -509,8 +454,8 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
             for indic_temp in indicateurs_a_tracer:
                 if indic_temp not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
                     pivot[indic_temp] = pivot.apply(lambda ligne: ligne[indic_temp] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)    # remarque : on pourrait mettre
-                else:                                                                                                                                                              # un != (car NaN != 0 renvoit True et derrière ça marcherait)
-                    pivot[indic_temp] = np.nan # Pareil que précédemment                                                                                                           # au lieu de > mais ce ne serait pas "propre"
+                else:                                                                                                                                                                                                                                                                                                                                   # un != (car NaN != 0 renvoit True et derrière ça marcherait)
+                    pivot[indic_temp] = np.nan # Pareil que précédemment                                                                                                                                                                                                                                                                                # au lieu de > mais ce ne serait pas "propre"
 
     df_cible = pivot[pivot["Code Insee 2024 Département"] == code_dep].copy()
     df_autres = pivot[pivot["Code Insee 2024 Département"] != code_dep].copy()
@@ -557,7 +502,7 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
     region = df_dep_cible["Nom 2024 Région"].iloc[0]
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & ((df_temp["Outre-mer"] == "Non") | (df_temp["Code Insee 2024 Département"] == code_dep)) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
-                   
+                    
     index_colonnes = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Strate population 2024", "Outre-mer", "Nom 2024 Région", "Population totale"]
 
     pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()    # aggfunc permet d'avoir la somme de toutes les lignes d'épargne nette par exemple
@@ -581,8 +526,8 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
                 return -3
             return val        
         pivot["Capacité de désendettement (années)"] = pivot["Capacité de désendettement (vraie)"].apply(borner) 
-                                                                                                                                                                                                                                                            
-    if "Poids des AIS (%)" in indicateurs:                                                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+    if "Poids des AIS (%)" in indicateurs:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
         pivot["Poids des AIS (%)"] = np.where(
             pivot.get("Dépenses de fonctionnement", 0) != 0, 
             ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100, 
@@ -611,8 +556,8 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
             for indic_temp in indicateurs_a_tracer:
                 if indic_temp not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
                     pivot[indic_temp] = pivot.apply(lambda ligne: ligne[indic_temp] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)    # remarque : on pourrait mettre
-                else:                                                                                                                                                              # un != (car NaN != 0 renvoit True et derrière ça marcherait)
-                    pivot[indic_temp] = np.nan # Pareil que précédemment                                                                                                           # au lieu de > mais ce ne serait pas "propre"
+                else:                                                                                                                                                                                                                                                                                                                                   # un != (car NaN != 0 renvoit True et derrière ça marcherait)
+                    pivot[indic_temp] = np.nan # Pareil que précédemment                                                                                                                                                                                                                                                                                # au lieu de > mais ce ne serait pas "propre"
 
     df_cible = pivot[pivot["Code Insee 2024 Département"] == code_dep].copy()
     cols_mean = [c for c in indicateurs_a_tracer + ["Capacité de désendettement (vraie)"] if c in pivot.columns]
