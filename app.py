@@ -134,14 +134,12 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
         if indic not in df_plot.columns or df_plot[indic].isna().all():
             # On personnalise le message d'erreur au cas par cas
             if "(€/hab)" in indic and (indic in indicateurs_calculés):
-                label_txt = f"⚠️ {indic.replace(' (€/hab)', '')} non normalisable ⚠️        "
+                label_txt = f"⚠️ {indic.replace(' (€/hab)', '')} non normalisable ⚠️"
             else:
                 label_txt = f"⚠️ {indic} introuvable ou vide ⚠️"
             
             axe_indice_i.set_title(indic, fontsize=15, fontweight="bold", alpha=0.85)
             axe_indice_i.plot(df_plot["Exercice"], df_plot[indic.replace(' (€/hab)', '')], label=label_txt, alpha=0)
-            axe_indice_i.legend(loc="best", fontsize="small")
-            continue
             
         sns.lineplot(data=df_plot, x="Exercice", y=indic, hue="Nom 2024 Département", marker="o", ax=axe_indice_i, linewidth=3)
 
