@@ -318,7 +318,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                     ajouter_etiquettes_desendettement(axe, pivot)
             else:
                 if ("Capacité" in indic_temp or "Poids" in indic_temp):    # Les noms complets sont "Capacité de désendettement (années)" et "Poids des AIS (%)"
-                    
+                    axe.plot(pivot["Exercice"], pivot[indic_temp], label=f"⚠️ {indic_temp.replace(' (€/hab)', '')} non normalisable", color="gray", linestyle="--")
                 else:
                     axe.plot([], [], label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
         
