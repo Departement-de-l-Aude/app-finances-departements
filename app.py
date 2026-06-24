@@ -139,9 +139,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
                 label_txt = f"⚠️ {indic} introuvable ou vide ⚠️"
             
             axe_indice_i.set_title(indic, fontsize=15, fontweight="bold", alpha=0.85)
-            axe_indice_i.plot(df_plot["Exercice"], df_plot[indic.replace(' (€/hab)', '')], label=label_txt, alpha=0)
-            axe_indice_i.set_xlim(df_plot["Exercice"].min() - 0.2, df_plot["Exercice"].max() + 0.2)
-            axe_indice_i.set_xticks(df_plot["Exercice"].unique())
+            axe_indice_i.plot(df_plot["Exercice"], df_plot[indic.replace(' (€/hab)', '')], label=label_txt, alpha=1)
             axe_indice_i.legend(loc="best", fontsize="small")
             continue
             
