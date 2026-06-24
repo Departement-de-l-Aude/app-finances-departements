@@ -243,7 +243,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
       
     if par_habitant:
         if afficher_les_deux:
-            liste_indic_temp = []    # On crée une nouvelle liste pour avoir les graphiques avec les données bruts et les données normalisées d'un même indic sur la même ligne
+            liste_indic_temp = []    # On crée une nouvelle liste pour avoir les graphiques avec les données brutes et les données normalisées d'un même indic sur la même ligne
             for indic_temp in indicateurs_a_tracer:
                 liste_indic_temp.append(indic_temp)
                 indic_par_hab_temp = f"{indic_temp} (€/hab)"
@@ -317,7 +317,10 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                     axe.axhline(3, color="green", linestyle="--", linewidth=1)
                     ajouter_etiquettes_desendettement(axe, pivot)
             else:
-                axe.plot([], [], label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
+                if ("Capacité" in indic_temp or "Poids" in indic_temp):    # Les noms complets sont "Capacité de désendettement (années)" et "Poids des AIS (%)"
+                    
+                else:
+                    axe.plot([], [], label=f"⚠️ {indic_temp} indisponible", color="gray", linestyle="--")
         
         if par_habitant:
             axe.set_title("Valeurs normalisées (€/hab)", fontsize=20, fontweight="bold", alpha=0.85)
@@ -410,7 +413,7 @@ def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateur
       
     if par_habitant:
         if afficher_les_deux:
-            liste_indic_temp = []    # On crée une nouvelle liste pour avoir les graphiques avec les données bruts et les données normalisées d'un même indic sur la même ligne
+            liste_indic_temp = []    # On crée une nouvelle liste pour avoir les graphiques avec les données brutes et les données normalisées d'un même indic sur la même ligne
             for indic_temp in indicateurs_a_tracer:
                 liste_indic_temp.append(indic_temp)
                 indic_par_hab_temp = f"{indic_temp} (€/hab)"
@@ -492,7 +495,7 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
       
     if par_habitant:
         if afficher_les_deux:
-            liste_indic_temp = []    # On crée une nouvelle liste pour avoir les graphiques avec les données bruts et les données normalisées d'un même indic sur la même ligne
+            liste_indic_temp = []    # On crée une nouvelle liste pour avoir les graphiques avec les données brutes et les données normalisées d'un même indic sur la même ligne
             for indic_temp in indicateurs_a_tracer:
                 liste_indic_temp.append(indic_temp)
                 indic_par_hab_temp = f"{indic_temp} (€/hab)"
@@ -594,7 +597,7 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
       
     if par_habitant:
         if afficher_les_deux:
-            liste_indic_temp = []    # On crée une nouvelle liste pour avoir les graphiques avec les données bruts et les données normalisées d'un même indic sur la même ligne
+            liste_indic_temp = []    # On crée une nouvelle liste pour avoir les graphiques avec les données brutes et les données normalisées d'un même indic sur la même ligne
             for indic_temp in indicateurs_a_tracer:
                 liste_indic_temp.append(indic_temp)
                 indic_par_hab_temp = f"{indic_temp} (€/hab)"
@@ -688,11 +691,11 @@ indicateurs_choisis = list(dict.fromkeys(indicateurs_choisis))
 
 st.sidebar.markdown("<br>", unsafe_allow_html=True)
 
-par_habitant = st.sidebar.checkbox("Afficher les données en par habitant (€/hab)")
+par_habitant = st.sidebar.checkbox("Normaliser les données (€/hab)")
 
 afficher_les_deux = False
 if par_habitant:
-    afficher_les_deux = st.sidebar.checkbox("Afficher côte à côte l'absolu ET le normalisé")
+    afficher_les_deux = st.sidebar.checkbox("Afficher la donnée brute ET la normalisée")
 
 st.sidebar.markdown("<hr>", unsafe_allow_html=True)
 st.sidebar.markdown(
