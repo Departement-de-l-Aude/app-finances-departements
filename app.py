@@ -294,8 +294,8 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                     pivot[indic] = pivot.apply(lambda ligne: ligne[indic] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)    # remarque : on pourrait mettre
                 else:                                                                                                                                                           # un != (car NaN != 0 renvoit True et derrière ça marcherait)
                     pivot[indic] = np.nan # Pareil que précédemment                                                                                                          # au lieu de > mais ce ne serait pas "propre"
-   
-  if afficher_les_deux:                                                                                                                                                           
+    
+    if afficher_les_deux:                                                                                                                                                           
         titre_graphe = f"Analyse croisée du département : {nom_dep}"
         # On sépare les bruts et les normalisés dans deux listes pour faire deux graphiques côte à côte
         bruts = [id for id in indicateurs_a_tracer if "(€/hab)" not in id]
