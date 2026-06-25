@@ -284,7 +284,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                 else:                                                                                                                                                           # un != (car NaN != 0 renvoit True et derrière ça marcherait)
                     pivot[indic] = np.nan # Pareil que précédemment                                                                                                          # au lieu de > mais ce ne serait pas "propre"
     
-   if afficher_les_deux:                                                                                                                                                           
+    if afficher_les_deux:                                                                                                                                                           
         titre_graphe = f"Analyse croisée du département : {nom_dep}"
     else:
         titre_graphe = f"Comparaison d'indicateurs du département : {nom_dep}"
