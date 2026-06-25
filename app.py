@@ -109,14 +109,14 @@ annee_max = int(df["Exercice"].max())
 
 
 # Fonction de génération des graphiques
-def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher_les_deux=False):
+def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher_les_deux=False, superposer=False):
     # On prépare le nombre de graphiques à afficher => combien de lignes et colonnes
-    n = len(indicateurs)
-    colonnes = 2 if n >= 2 else 1
-    if n % 2 == 0:
-        lignes = n // colonnes
+    if superposer:
+        lignes, colonnes, n = (1, 2, 2) if afficher_les_deux else (1, 1, 1)
     else:
-        lignes = (n+1) // 2    # On aura un graphe vide "seul" en + en bas
+        n = len(indicateurs)
+        colonnes = 2 if n >= 2 else 1
+        lignes = n // colonnes if n % 2 == 0 else (n+1) // 2    # On aura un graphe vide "seul" en + en bas
 
     fig, axes = plt.subplots(lignes, colonnes, figsize=(4*2*colonnes, 3*2*lignes))    # Affichage des graphiques en 4:3 avec un coeff de taille en + pour qu'il aient toujours la même taille
     fig.suptitle(titre, fontsize=24, fontweight="bold", y=0.9925) 
@@ -128,64 +128,53 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
         axes_liste = axes.flatten()
 
     # On affiche tout ce qu'il faut pour chaque graphe
-    for i, indic in enumerate(indicateurs):
-        axe_indice_i = axes_liste[i]
-
-        # --- ASTUCE DE SUPERPOSITION : Si 'indic' est une liste d'indicateurs ---
-        if isinstance(indic, list):
-            for ind in indic:
-                if ind in df_plot.columns and df_plot[ind].notna().any():
-                    sns.lineplot(data=df_plot, x="Exercice", y=ind, marker="o", label=ind, ax=axe_indice_i, linewidth=3)
-                    if ind == "Capacité de désendettement (années)":
-                        ajouter_etiquettes_desendettement(axe_indice_i, df_plot)
-                        
-            axe_indice_i.legend(loc="best", fontsize="small")
-            
-            if afficher_les_deux and i == 0:
-                axe_indice_i.set_title("Valeurs brutes", fontsize=15, fontweight="bold", alpha=0.85)
-            elif afficher_les_deux and i == 1:
-                axe_indice_i.set_title("Valeurs normalisées (€/hab)", fontsize=15, fontweight="bold", alpha=0.85)
+    for i, axe_indice_i in enumerate(axes_liste[:n]):
+        
+        # --- CAS 1 : LOGIQUE DE SUPERPOSITION (Pour un seul département) ---
+        if superposer:
+            if afficher_les_deux:
+                axe_indice_i.set_title("Valeurs brutes" if i == 0 else "Valeurs normalisées (€/hab)", fontsize=15, fontweight="bold", alpha=0.85)
+                # On filtre les indicateurs correspondants à l'axe courant (X brut pour l'axe 0, X/hab pour l'axe 1)
+                indics_axe = [ind for ind in indicateurs if ("(€/hab)" in ind) == (i == 1)]
             else:
-                titre_axe = "Valeurs normalisées (€/hab)" if par_habitant else "Valeurs brutes"
-                axe_indice_i.set_title(titre_axe, fontsize=15, fontweight="bold", alpha=0.85)
+                axe_indice_i.set_title("Valeurs normalisées (€/hab)" if par_habitant else "Valeurs brutes", fontsize=15, fontweight="bold", alpha=0.85)
+                indics_axe = indicateurs
 
-        # --- COMPORTEMENT NORMAL D'ORIGINE : Un indicateur par graphe ---
+            # On "fond" (melt) le tableau pour que Seaborn comprenne qu'on veut superposer plusieurs colonnes d'indicateurs
+            df_melt = df_plot.melt(id_vars=["Exercice"], value_vars=[ind for ind in indics_axe if ind in df_plot.columns], var_name="Indicateur", value_name="Valeur")
+            
+            if not df_melt.empty and df_melt["Valeur"].notna().any():
+                sns.lineplot(data=df_melt, x="Exercice", y="Valeur", hue="Indicateur", style="Indicateur", markers=True, dashes=False, ax=axe_indice_i, linewidth=3)
+            else:
+                axe_indice_i.text(0.5, 0.5, "⚠️ Aucun indicateur disponible ⚠️", fontsize=12, fontweight="bold", va="center", ha="center")
+
+        # --- CAS 2 : COMPORTEMENT NORMAL D'ORIGINE (Un indicateur par graphe) ---
         else:
-            # Si les données sont manquantes ou non-normalisables, on personnalise le message d'erreur, on affiche ce qu'il faut et on passe à l'indicateur suivant
+            indic = indicateurs[i]
             if indic not in df_plot.columns or df_plot[indic].isna().all():
-                if "(€/hab)" in indic and (indic.replace(' (€/hab)', '') in indicateurs_calculés):
-                    label_txt = f"⚠️ {indic.replace(' (€/hab)', '')} non normalisable ⚠️"
-                else:
-                    label_txt = f"⚠️ {indic} introuvable ou vide ⚠️"
-                
+                label_txt = f"⚠️ {indic.replace(' (€/hab)', '')} non normalisable ⚠️" if "(€/hab)" in indic and (indic.replace(' (€/hab)', '') in indicateurs_calculés) else f"⚠️ {indic} introuvable ou vide ⚠️"
                 axe_indice_i.set_title(indic, fontsize=15, fontweight="bold", color="grey")
                 axe_indice_i.text(0.5, 0.5, label_txt, fontsize=12, fontweight="bold", va="center", ha="center")
                 continue
 
-            # Sinon (on a mis un continue haut dessus pour pas avoir à faire une indentation de +), on trace notre graphique
             sns.lineplot(data=df_plot, x="Exercice", y=indic, hue="Nom 2024 Département", style="Nom 2024 Département", markers=True, dashes=False, ax=axe_indice_i, linewidth=3)
+            axe_indice_i.set_title(f"{indic} (€/hab)" if (par_habitant and not afficher_les_deux and indic not in indicateurs_calculés) else indic, fontsize=15, fontweight="bold", alpha=0.85)
 
-            if par_habitant and not afficher_les_deux and indic not in indicateurs_calculés:
-                titre_axe = f"{indic} (€/hab)"
-            else:
-                titre_axe = indic
-                    
-            axe_indice_i.set_title(titre_axe, fontsize=15, fontweight="bold", alpha=0.85)
-        
-        # --- Paramètres communs aux deux comportements (superposés ou non) ---
+        # --- CONFIGURATIONS COMMUNES (Communes aux deux comportements pour éviter de dupliquer du code) ---
         axe_indice_i.set_xlim(df_plot["Exercice"].min() - 0.2, df_plot["Exercice"].max() + 0.2)
         axe_indice_i.set_xticks(df_plot["Exercice"].unique())
         
-        liste_verif_dette = indic if isinstance(indic, list) else [indic]
-        if "Capacité de désendettement (années)" in liste_verif_dette:
+        # Gestion des seuils de désendettement (s'applique si l'indicateur est présent dans l'axe actuel)
+        indics_presents = indics_axe if superposer else [indicateurs[i]]
+        if "Capacité de désendettement (années)" in indics_presents:
             axe_indice_i.axhline(12, color="darkred", linestyle="--", linewidth=1, label="Surendettement avéré")
             axe_indice_i.axhline(9, color="red", linestyle="--", linewidth=1, label="Surendettement trop élevé")
             axe_indice_i.axhline(6, color="darkorange", linestyle="--", linewidth=1, label="Surendettement élevé")
             axe_indice_i.axhline(3, color="green", linestyle="--", linewidth=1, label="Endettement maîtrisé")
-            if not isinstance(indic, list):
-                ajouter_etiquettes_desendettement(axe_indice_i, df_plot)
-                if axe_indice_i.get_legend() is not None:
-                    axe_indice_i.legend(loc="best", fontsize="small")
+            ajouter_etiquettes_desendettement(axe_indice_i, df_plot)
+
+        if axe_indice_i.get_legend() is not None:
+            axe_indice_i.legend(loc="best", fontsize="small")
 
     if len(axes_liste) - n > 0:    # Si on est dans le cas ou le nombre d'indicateurs est pair, on supprime le dernier axe
         fig.delaxes(axes_liste[-1])
@@ -295,23 +284,19 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
                 else:                                                                                                                                                           # un != (car NaN != 0 renvoit True et derrière ça marcherait)
                     pivot[indic] = np.nan # Pareil que précédemment                                                                                                          # au lieu de > mais ce ne serait pas "propre"
     
-    if afficher_les_deux:                                                                                                                                                           
+   if afficher_les_deux:                                                                                                                                                           
         titre_graphe = f"Analyse croisée du département : {nom_dep}"
-        # On sépare les bruts et les normalisés dans deux listes pour faire deux graphiques côte à côte
-        bruts = [id for id in indicateurs_a_tracer if "(€/hab)" not in id]
-        norm = [id for id in indicateurs_a_tracer if "(€/hab)" in id]
-        liste_envoi = [bruts, norm]
     else:
         titre_graphe = f"Comparaison d'indicateurs du département : {nom_dep}"
-        # Tous les indicateurs ensemble dans une seule liste pour les superposer sur un seul graphique
-        liste_envoi = [indicateurs_a_tracer]
         
-    fig = generer_graphiques(pivot, titre_graphe, liste_envoi, par_habitant, afficher_les_deux)
+    # On appelle proprement la fonction en activant l'interrupteur 'superposer=True'
+    fig = generer_graphiques(pivot, titre_graphe, indicateurs_a_tracer, par_habitant, afficher_les_deux, superposer=True)
 
     colonnes_utiles = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
     df_final = pivot[[colonne for colonne in colonnes_utiles if colonne in pivot.columns]].round(1).sort_values(by=["Exercice"])
    
     return fig, df_final
+
 
 
 ##########
