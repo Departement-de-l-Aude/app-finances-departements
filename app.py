@@ -143,7 +143,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
             df_melt = df_plot.melt(id_vars=["Exercice"], value_vars=[ind for ind in indics_axe], var_name="Indicateur", value_name="Valeur")
             
             if df_melt["Valeur"].notna().any():
-                sns.lineplot(data=df_melt, x="Exercice", y="Valeur", hue="Indicateur", style="Indicateur", markers=True, dashes=False, ax=axe_indice_i, linewidth=3)
+                sns.lineplot(data=df_melt, x="Exercice", y="Valeur", hue="Indicateur", style="Indicateur", markers=True, ax=axe_indice_i, linewidth=3)
             else:
                 axe_indice_i.text(0.5, 0.5, "⚠️ Aucun indicateur disponible ⚠️", fontsize=12, fontweight="bold", va="center", ha="center")
 
