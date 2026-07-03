@@ -632,12 +632,9 @@ for main_cat, subcats in sorted(dico_indicateurs.items()):
             if subcat_name != "Indicateurs":
                 st.markdown(f"**{subcat_name}**")
             
-            defauts_cat = [indic for indic in indicators_list if indic in indicateurs_calculés]
-            
             choix = st.multiselect(
                 label=subcat_name,
                 options=indicators_list,
-                default=defauts_cat,
                 key=f"ms_{main_cat}_{subcat_name}",
                 label_visibility="collapsed" if subcat_name != "Indicateurs" else "visible" 
             )
