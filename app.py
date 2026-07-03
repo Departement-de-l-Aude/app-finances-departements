@@ -662,7 +662,7 @@ st.sidebar.markdown(
 menu = st.sidebar.radio(
     label="Menu caché",
     options=[
-        "Comparaison d'indicateurs d'un même département        (1 seul graphique affiché)",
+        "Comparaison d'indicateurs d'un même département          (1 seul graphique affiché)",
         "Recherche départements de même strate", 
         "Comparaison d'indicateurs financiers entre plusieurs départements", 
         "Département comparé à la moyenne de sa strate",
@@ -763,7 +763,7 @@ elif menu == "Département comparé à la moyenne de sa strate":
     with col1:
         dep = st.selectbox("Sélectionnez le département :", liste_deps)
     with col2:
-        st.write("") 
+        st.write("")
         st.write("")
         afficher_france = st.checkbox("Afficher la moyenne de la strate (France)", value=True)
         afficher_region = st.checkbox("Afficher la moyenne de la strate (Même région)", value=False)
