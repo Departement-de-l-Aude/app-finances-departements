@@ -621,7 +621,7 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-st.sidebar.markdown("**📂 Choix des indicateurs par thème :**")
+st.sidebar.markdown("**📂 Catégories d'indicateurs :**")
 
 indicateurs_choisis = []
 
@@ -662,7 +662,7 @@ st.sidebar.markdown(
 menu = st.sidebar.radio(
     label="Menu caché",
     options=[
-        "Analyser un seul département",
+        "Comparaison d'indicateurs d'un même département",
         "Recherche départements de même strate", 
         "Comparaison d'indicateurs financiers entre plusieurs départements", 
         "Département comparé à la moyenne de sa strate",
@@ -685,7 +685,7 @@ if menu != "Recherche départements de même strate":
         st.stop()
 
 
-if menu == "Analyser un seul département":
+if menu == "Comparaison d'indicateurs d'un même département":
     st.header("🎯 Analyse d'un seul département")
     dep = st.selectbox("Sélectionnez le département à analyser :", liste_deps)
         
