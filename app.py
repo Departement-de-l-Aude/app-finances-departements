@@ -686,7 +686,7 @@ if menu != "Recherche départements de même strate":
 
 
 if menu == "Comparaison d'indicateurs d'un même département (1 seul graphique affiché)":
-    st.header("🎯 Analyse d'un seul département")
+    st.header("🎯 Comparaison d'indicateurs d'un même département")
     dep = st.selectbox("Sélectionnez le département à analyser :", liste_deps)
         
     annees_sel = st.slider("Sélectionnez l'intervalle des années (Exercices) :", 
@@ -728,7 +728,7 @@ elif menu == "Recherche départements de même strate":
             st.warning("Aucun résultat trouvé ou données manquantes.")
 
 elif menu == "Comparaison d'indicateurs financiers entre plusieurs départements (1 graphe par indicateur)":
-    st.header("⚖️ Comparaison entre plusieurs départements")
+    st.header("⚖️ Comparaison d'indicateurs financiers entre plusieurs départements")
     
     deps_selectionnes = st.multiselect(
         "Sélectionnez les départements à comparer :", 
@@ -758,7 +758,7 @@ elif menu == "Comparaison d'indicateurs financiers entre plusieurs départements
                 st.dataframe(data, use_container_width=True)
 
 elif menu == "Département comparé à la moyenne de sa strate (1 graphe par indicateur)":
-    st.header("📈 Département comparé à la moyenne de sa strate (1 graphe par indicateur)")
+    st.header("📈 Département comparé à la moyenne de sa strate")
     col1, col2 = st.columns(2)
     with col1:
         dep = st.selectbox("Sélectionnez le département :", liste_deps)
@@ -790,7 +790,7 @@ elif menu == "Département comparé à la moyenne de sa strate (1 graphe par ind
                 st.dataframe(data, use_container_width=True)
 
 elif menu == "Département comparé à la moyenne de sa strate et à la moyenne de la métropole (1 graphe par indicateur)":
-    st.header("🏢 Département comparé à la moyenne de sa strate et à la moyenne de la métropole (1 graphe par indicateur)")
+    st.header("🏢 Département comparé à la moyenne de sa strate et à la moyenne de la métropole")
     col1, col2 = st.columns(2)
     with col1:
         dep = st.selectbox("Sélectionnez le département :", liste_deps)
