@@ -662,7 +662,7 @@ st.sidebar.markdown(
 menu = st.sidebar.radio(
     label="Menu caché",
     options=[
-        "Comparaison d'indicateurs d'un même département                           (1 seul graphique affiché)",
+        "Comparaison d'indicateurs d'un même département                              (1 seul graphique affiché)",
         "Recherche départements de même strate", 
         "Comparaison d'indicateurs financiers entre plusieurs départements", 
         "Département comparé à la moyenne de sa strate",
