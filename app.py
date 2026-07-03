@@ -660,7 +660,7 @@ menu = st.sidebar.radio(
     label="Menu caché",
     options=[
         "Comparaison d'indicateurs d'un même département (1 seul graphique affiché)",
-        "recherche de départements de même strate", 
+        "Recherche de départements de même strate", 
         "Comparaison d'indicateurs financiers entre plusieurs départements (1 graphe par indicateur)", 
         "Département comparé à la moyenne de sa strate (1 graphe par indicateur)",
         "Département comparé à la moyenne de sa strate et à la moyenne de la métropole (1 graphe par indicateur)"
@@ -670,11 +670,11 @@ menu = st.sidebar.radio(
 
 st.write("---")
 
-if menu != "recherche de départements de même strate" and len(indicateurs_choisis) == 0:
+if menu != "Recherche de départements de même strate" and len(indicateurs_choisis) == 0:
     st.warning("⚠️ Veuillez sélectionner **au moins 1 indicateur** dans le panneau latéral de gauche pour générer les graphiques.")
     st.stop()
 
-if menu != "recherche de départements de même strate":
+if menu != "Recherche de départements de même strate":
     facteur_graphes = 2 if (par_habitant and afficher_les_deux) else 1
     total_graphes = len(indicateurs_choisis) * facteur_graphes
     if total_graphes > 10:
@@ -706,7 +706,7 @@ if menu == "Comparaison d'indicateurs d'un même département (1 seul graphique 
         else:
             st.warning("Aucune donnée trouvée pour ce département sur cet intervalle.")
 
-elif menu == "recherche de départements de même strate":
+elif menu == "Recherche de départements de même strate":
     st.header("🔍 Départements de même strate")
     col1, col2 = st.columns(2)
     with col1:
