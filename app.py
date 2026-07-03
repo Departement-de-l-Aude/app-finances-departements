@@ -664,9 +664,9 @@ menu = st.sidebar.radio(
     options=[
         "Comparaison d'indicateurs d'un même département (1 seul graphique affiché)",
         "Recherche départements de même strate", 
-        "Comparaison d'indicateurs financiers entre plusieurs départements", 
-        "Département comparé à la moyenne de sa strate",
-        "Département comparé à la moyenne de sa strate et à la moyenne de la métropole"
+        "Comparaison d'indicateurs financiers entre plusieurs départements (1 graphe par indicateur)", 
+        "Département comparé à la moyenne de sa strate (1 graphe par indicateur)",
+        "Département comparé à la moyenne de sa strate et à la moyenne de la métropole (1 graphe par indicateur)"
     ],
     label_visibility="collapsed" 
 )
@@ -685,7 +685,7 @@ if menu != "Recherche départements de même strate":
         st.stop()
 
 
-if menu == "Comparaison d'indicateurs d'un même département        (1 seul graphique affiché)":
+if menu == "Comparaison d'indicateurs d'un même département (1 seul graphique affiché)":
     st.header("🎯 Analyse d'un seul département")
     dep = st.selectbox("Sélectionnez le département à analyser :", liste_deps)
         
@@ -727,7 +727,7 @@ elif menu == "Recherche départements de même strate":
         else:
             st.warning("Aucun résultat trouvé ou données manquantes.")
 
-elif menu == "Comparaison d'indicateurs financiers entre plusieurs départements":
+elif menu == "Comparaison d'indicateurs financiers entre plusieurs départements (1 graphe par indicateur)":
     st.header("⚖️ Comparaison entre plusieurs départements")
     
     deps_selectionnes = st.multiselect(
@@ -757,8 +757,8 @@ elif menu == "Comparaison d'indicateurs financiers entre plusieurs départements
                 st.subheader("📋 Données brutes")
                 st.dataframe(data, use_container_width=True)
 
-elif menu == "Département comparé à la moyenne de sa strate":
-    st.header("📈 Département comparé à la moyenne de sa strate")
+elif menu == "Département comparé à la moyenne de sa strate (1 graphe par indicateur)":
+    st.header("📈 Département comparé à la moyenne de sa strate (1 graphe par indicateur)")
     col1, col2 = st.columns(2)
     with col1:
         dep = st.selectbox("Sélectionnez le département :", liste_deps)
@@ -789,8 +789,8 @@ elif menu == "Département comparé à la moyenne de sa strate":
                 st.subheader("📋 Données brutes")
                 st.dataframe(data, use_container_width=True)
 
-elif menu == "Département comparé à la moyenne de sa strate et à la moyenne de la métropole":
-    st.header("🏢 Département comparé à la moyenne de sa strate et à la moyenne de la métropole")
+elif menu == "Département comparé à la moyenne de sa strate et à la moyenne de la métropole (1 graphe par indicateur)":
+    st.header("🏢 Département comparé à la moyenne de sa strate et à la moyenne de la métropole (1 graphe par indicateur)")
     col1, col2 = st.columns(2)
     with col1:
         dep = st.selectbox("Sélectionnez le département :", liste_deps)
