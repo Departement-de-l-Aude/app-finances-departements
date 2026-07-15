@@ -319,7 +319,7 @@ def departements_meme_strate(df_arg, code_dep, mm_region=False):
         serie_filtre = serie_filtre & (df_temp["Nom 2024 Région"] == region)
 
     df_resultat = df_temp.loc[serie_filtre, ["Code Insee 2024 Département", "Nom 2024 Département", "Nom 2024 Région"]].drop_duplicates()
-    df_resultat = df_resultat[df_resultat["Code Insee 2024 Département"] != code_dep]
+    df_resultat = df_resultat[df_resultat["Code Insee 2024 Département"] != code_dep] # Ici on exclut notre département de la liste
     
     return df_resultat.reset_index(drop=True)
 
@@ -470,7 +470,7 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
                     pivot[indic] = np.nan # Pareil que précédemment                                                                                                                                                                                                                                                                                # au lieu de > mais ce ne serait pas "propre"
 
     df_cible = pivot[pivot["Code Insee 2024 Département"] == code_dep].copy()
-    df_autres = pivot[pivot["Code Insee 2024 Département"] != code_dep].copy()
+    df_autres = pivot[pivot["Code Insee 2024 Département"] != code_dep].copy() # On ne prend pas en compte notre département dans la moyenne
     
     cols_mean = [c for c in indicateurs_a_tracer + ["Capacité de désendettement (vraie)"] if c in df_autres.columns]
     
