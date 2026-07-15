@@ -413,7 +413,7 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Strate population 2024"] == strate) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
                     
-    index_colonnes = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Nom 2024 Région", "Population totale"]
+    index_colonnes = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Nom 2024 Région", "Outre-mer", "Population totale"]
 
     pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()    # aggfunc permet d'avoir la somme de toutes les lignes d'épargne nette par exemple
     
@@ -470,7 +470,7 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
                     pivot[indic] = np.nan # Pareil que précédemment                                                                                                                                                                                                                                                                                # au lieu de > mais ce ne serait pas "propre"
 
     df_cible = pivot[pivot["Code Insee 2024 Département"] == code_dep].copy()
-    df_autres = pivot[pivot["Code Insee 2024 Département"] != code_dep].copy() # On ne prend pas en compte notre département dans la moyenne
+    df_autres = pivot[(pivot["Code Insee 2024 Département"] != code_dep) & (pivot["Outre-mer"] == "Non")].copy() # On ne prend pas en compte notre département dans la moyenne et on ne prend pas les outre-mer
     
     cols_mean = [c for c in indicateurs_a_tracer + ["Capacité de désendettement (vraie)"] if c in df_autres.columns]
     
