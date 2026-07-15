@@ -395,7 +395,7 @@ def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateur
     return fig, df_final
 
 
-def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs, afficher_france=True, afficher_region=False, par_habitant=False, afficher_les_deux=False):
+def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs, afficher_metro=True, afficher_region=False, par_habitant=False, afficher_les_deux=False):
     df_temp = df_arg.copy()
     df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
     code_dep = str(code_dep)
@@ -475,10 +475,10 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
     cols_mean = [c for c in indicateurs_a_tracer + ["Capacité de désendettement (vraie)"] if c in df_autres.columns]
     
     list_df_to_concat = [df_cible]
-    if afficher_france and not df_autres.empty:
-        df_moyenne_france = df_autres.groupby("Exercice")[cols_mean].mean().reset_index()
-        df_moyenne_france["Nom 2024 Département"] = f"Moyenne Strate {strate} (France)"
-        list_df_to_concat.append(df_moyenne_france)
+    if afficher_metro and not df_autres.empty:
+        df_moyenne_metro = df_autres.groupby("Exercice")[cols_mean].mean().reset_index()
+        df_moyenne_metro["Nom 2024 Département"] = f"Moyenne Strate {strate} (métropole)"
+        list_df_to_concat.append(df_moyenne_metro)
         
     if afficher_region and not df_autres.empty:
         df_autres_region = df_autres[df_autres["Nom 2024 Région"] == region]
@@ -580,7 +580,7 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
         df_strate = df_strate[df_strate["Nom 2024 Région"] == region]
 
     df_moy_strate = df_strate.groupby("Exercice")[cols_mean].mean().reset_index()
-    label_moyenne = f"Moyenne Strate {strate}" + (" (même région)" if meme_region else " (France)")
+    label_moyenne = f"Moyenne Strate {strate}" + (" (même région)" if meme_region else " (métropole)")
     df_moy_strate["Nom 2024 Département"] = label_moyenne
 
     df_metro = pivot[pivot["Outre-mer"] == "Non"].copy()
@@ -762,17 +762,17 @@ elif menu == "Département comparé à la moyenne de sa strate (1 graphe par ind
     with col2:
         st.write("")
         st.write("")
-        afficher_france = st.checkbox("Afficher la moyenne de la strate (France)", value=True)
-        afficher_region = st.checkbox("Afficher la moyenne de la strate (Même région)", value=False)
+        afficher_metro = st.checkbox("Afficher la moyenne de la strate (métropole)", value=True)
+        afficher_region = st.checkbox("Afficher la moyenne de la strate (même région)", value=False)
         
     annees_sel = st.slider("Sélectionnez l'intervalle des années (Exercices) :", 
                            min_value=annee_min, max_value=annee_max, value=(annee_min, annee_max))
         
     if st.button("Générer l'analyse"):
-        if not afficher_france and not afficher_region:
-            st.error("⚠️ Veuillez cocher au moins une moyenne à afficher (France et/ou Même région).")
+        if not afficher_metro and not afficher_region:
+            st.error("⚠️ Veuillez cocher au moins une moyenne à afficher (métropole et/ou même région).")
         else:
-            fig, data = comparer_departement_strate(df, dep, annees_sel, indicateurs_choisis, afficher_france, afficher_region, par_habitant, afficher_les_deux)
+            fig, data = comparer_departement_strate(df, dep, annees_sel, indicateurs_choisis, afficher_metro, afficher_region, par_habitant, afficher_les_deux)
             if fig:    
                 buf = io.BytesIO()
                 fig.savefig(buf, format="pdf", bbox_inches="tight")
