@@ -311,10 +311,10 @@ def departements_meme_strate(df_arg, code_dep, mm_region=False):
     if df_dep_cible.empty: 
         return pd.DataFrame()
 
-    strate = df_dep_cible["Strate population 2024"].iloc[0]
+    strate = df_dep_cible["strate population 2024"].iloc[0]
     region = df_dep_cible["Nom 2024 Région"].iloc[0]
     
-    serie_filtre = df_temp["Strate population 2024"] == strate
+    serie_filtre = df_temp["strate population 2024"] == strate
     if mm_region:
         serie_filtre = serie_filtre & (df_temp["Nom 2024 Région"] == region)
 
@@ -407,11 +407,11 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
         ax.text(0.5, 0.5, "Aucune donnée disponible", fontsize=12, fontweight="bold", ha='center', va='center')
         return fig, pd.DataFrame()
         
-    strate = df_dep_cible["Strate population 2024"].iloc[0]
+    strate = df_dep_cible["strate population 2024"].iloc[0]
     nom_dep = df_dep_cible["Nom 2024 Département"].iloc[0]
     region = df_dep_cible["Nom 2024 Région"].iloc[0]
     
-    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Strate population 2024"] == strate) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
+    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["strate population 2024"] == strate) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
                     
     index_colonnes = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Nom 2024 Région", "Outre-mer", "Population totale"]
 
@@ -477,14 +477,14 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
     list_df_to_concat = [df_cible]
     if afficher_metro and not df_autres.empty:
         df_moyenne_metro = df_autres.groupby("Exercice")[cols_mean].mean().reset_index()
-        df_moyenne_metro["Nom 2024 Département"] = f"Moyenne Strate {strate} (métropole)"
+        df_moyenne_metro["Nom 2024 Département"] = f"Moyenne strate {strate} (métropole)"
         list_df_to_concat.append(df_moyenne_metro)
         
     if afficher_region and not df_autres.empty:
         df_autres_region = df_autres[df_autres["Nom 2024 Région"] == region]
         if not df_autres_region.empty:
             df_moyenne_region = df_autres_region.groupby("Exercice")[cols_mean].mean().reset_index()
-            df_moyenne_region["Nom 2024 Département"] = f"Moyenne Strate {strate} (même région)"
+            df_moyenne_region["Nom 2024 Département"] = f"Moyenne strate {strate} (même région)"
             list_df_to_concat.append(df_moyenne_region)
             
     df_plot = pd.concat(list_df_to_concat, ignore_index=True)
@@ -509,13 +509,13 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
         ax.text(0.5, 0.5, "Aucune donnée disponible", fontsize=12, fontweight="bold", ha='center', va='center')
         return fig, pd.DataFrame()
         
-    strate = df_dep_cible["Strate population 2024"].iloc[0]
+    strate = df_dep_cible["strate population 2024"].iloc[0]
     nom_dep = df_dep_cible["Nom 2024 Département"].iloc[0]
     region = df_dep_cible["Nom 2024 Région"].iloc[0]
     
     serie_filtre = (df_temp["Type de budget"] == "Budget principal") & ((df_temp["Outre-mer"] == "Non") | (df_temp["Code Insee 2024 Département"] == code_dep)) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
                     
-    index_colonnes = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Strate population 2024", "Outre-mer", "Nom 2024 Région", "Population totale"]
+    index_colonnes = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "strate population 2024", "Outre-mer", "Nom 2024 Région", "Population totale"]
 
     pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()    # aggfunc permet d'avoir la somme de toutes les lignes d'épargne nette par exemple
     
@@ -574,18 +574,18 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
     df_cible = pivot[pivot["Code Insee 2024 Département"] == code_dep].copy()
     cols_mean = [c for c in indicateurs_a_tracer + ["Capacité de désendettement (vraie)"] if c in pivot.columns]
 
-    df_strate = pivot[(pivot["Strate population 2024"] == strate) & (pivot["Code Insee 2024 Département"] != code_dep)].copy()
+    df_strate = pivot[(pivot["strate population 2024"] == strate) & (pivot["Code Insee 2024 Département"] != code_dep)].copy()
     
     if meme_region:
         df_strate = df_strate[df_strate["Nom 2024 Région"] == region]
 
     df_moy_strate = df_strate.groupby("Exercice")[cols_mean].mean().reset_index()
-    label_moyenne = f"Moyenne Strate {strate}" + (" (même région)" if meme_region else " (métropole)")
+    label_moyenne = f"Moyenne strate {strate}" + (" (même région)" if meme_region else " (métropole)")
     df_moy_strate["Nom 2024 Département"] = label_moyenne
 
     df_metro = pivot[pivot["Outre-mer"] == "Non"].copy()
     df_moy_metro = df_metro.groupby("Exercice")[cols_mean].mean().reset_index()
-    df_moy_metro["Nom 2024 Département"] = "Moyenne Métropole"
+    df_moy_metro["Nom 2024 Département"] = "Moyenne métropole"
     
     df_plot = pd.concat([df_cible, df_moy_strate, df_moy_metro], ignore_index=True)
 
