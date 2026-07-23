@@ -19,8 +19,12 @@ try:
 except FileNotFoundError:
     st.error("Le fichier 'ofgl-base-departements.zip' est introuvable. Contactez l'administrateur du site.")
     st.stop()
-    
-colonnes_necessaires = ["Exercice", "Nom 2024 Département", "Code Insee 2024 Département", "Population totale"]
+
+# On stocke les variables annee_min et annee_max
+annee_min = int(df["Exercice"].min())
+annee_max = int(df["Exercice"].max())
+
+colonnes_necessaires = ["Exercice", "Nom " + annee_max + " Département", "Code Insee " + annee_max + " Département", "Population totale"]
 colonnes_manquantes = [col for col in colonnes_necessaires if col not in df.columns]
 
 if colonnes_manquantes:
@@ -102,9 +106,7 @@ dico_indicateurs = {
     }    
 }
 
-# On stocke les variables annee_min et annee_max
-annee_min = int(df["Exercice"].min())
-annee_max = int(df["Exercice"].max())
+
 
 
 
@@ -155,7 +157,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
                 axe_indice_i.text(0.5, 0.5, label_txt, fontsize=12, fontweight="bold", va="center", ha="center")
                 continue
 
-            sns.lineplot(data=df_plot, x="Exercice", y=indic, hue="Nom 2024 Département", style="Nom 2024 Département", markers=True, dashes=False, ax=axe_indice_i, linewidth=3)
+            sns.lineplot(data=df_plot, x="Exercice", y=indic, hue="Nom " + annee_max + " Département", style="Nom " + annee_max + " Département", markers=True, dashes=False, ax=axe_indice_i, linewidth=3)
             axe_indice_i.set_title(f"{indic} (€/hab)" if (par_habitant and not afficher_les_deux and indic not in indicateurs_calculés) else indic, fontsize=15, fontweight="bold", alpha=0.85)
 
         # Mêmes abscisses pour tout les graphes
@@ -218,13 +220,13 @@ def ajouter_etiquettes_desendettement(axe, df_donnees):
 ##########
 def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, par_habitant=False, afficher_les_deux=False):
     df_temp = df_arg.copy()
-    df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
+    df_temp["Code Insee " + annee_max + " Département"] = df_temp["Code Insee " + annee_max + " Département"].astype(str)
     code_dep = str(code_dep)
     annee_min_temp, annee_max_temp = intervalle_annees
     
-    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Code Insee 2024 Département"] == code_dep) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
+    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Code Insee " + annee_max + " Département"] == code_dep) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
                     
-    index_colonnes = ["Exercice", "Nom 2024 Département", "Population totale"]
+    index_colonnes = ["Exercice", "Nom " + annee_max + " Département", "Population totale"]
 
     pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()    # aggfunc permet d'avoir la somme de toutes les lignes d'épargne nette par exemple
     if pivot.empty: # Sécurité
@@ -232,7 +234,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
         ax.text(0.5, 0.5, "Aucune donnée disponible", fontsize=12, fontweight="bold", ha='center', va='center')
         return fig, pd.DataFrame()
     
-    nom_dep = pivot["Nom 2024 Département"].iloc[0]    # On récupère le nom du département pour plus tard l'afficher et pas avoir que les numéros de départements
+    nom_dep = pivot["Nom " + annee_max + " Département"].iloc[0]    # On récupère le nom du département pour plus tard l'afficher et pas avoir que les numéros de départements
     
     
     if "Capacité de désendettement (années)" in indicateurs:
@@ -290,7 +292,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
     # On appelle proprement la fonction en activant l'interrupteur 'superposer=True'
     fig = generer_graphiques(pivot, titre_graphe, indicateurs_a_tracer, par_habitant, afficher_les_deux, superposer=True)
 
-    colonnes_utiles = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
+    colonnes_utiles = ["Exercice", "Nom " + annee_max + " Département"] + indicateurs_a_tracer
     df_final = pivot[[colonne for colonne in colonnes_utiles if colonne in pivot.columns]].round(1).sort_values(by=["Exercice"])
    
     return fig, df_final
@@ -305,33 +307,33 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
 def departements_meme_strate(df_arg, code_dep, mm_region=False):
     df_temp = df_arg.copy()
     code_dep = str(code_dep)
-    df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
+    df_temp["Code Insee " + annee_max + " Département"] = df_temp["Code Insee " + annee_max + " Département"].astype(str)
     
-    df_dep_cible = df_temp[df_temp["Code Insee 2024 Département"] == code_dep]
+    df_dep_cible = df_temp[df_temp["Code Insee " + annee_max + " Département"] == code_dep]
     if df_dep_cible.empty: 
         return pd.DataFrame()
 
-    strate = df_dep_cible["Strate population 2024"].iloc[0]
-    region = df_dep_cible["Nom 2024 Région"].iloc[0]
+    strate = df_dep_cible["Strate population " + annee_max + ""].iloc[0]
+    region = df_dep_cible["Nom " + annee_max + " Région"].iloc[0]
     
-    serie_filtre = df_temp["Strate population 2024"] == strate
+    serie_filtre = df_temp["Strate population " + annee_max + ""] == strate
     if mm_region:
-        serie_filtre = serie_filtre & (df_temp["Nom 2024 Région"] == region)
+        serie_filtre = serie_filtre & (df_temp["Nom " + annee_max + " Région"] == region)
 
-    df_resultat = df_temp.loc[serie_filtre, ["Code Insee 2024 Département", "Nom 2024 Département", "Nom 2024 Région"]].drop_duplicates()
-    df_resultat = df_resultat[df_resultat["Code Insee 2024 Département"] != code_dep] # Ici on exclut notre département de la liste
+    df_resultat = df_temp.loc[serie_filtre, ["Code Insee " + annee_max + " Département", "Nom " + annee_max + " Département", "Nom " + annee_max + " Région"]].drop_duplicates()
+    df_resultat = df_resultat[df_resultat["Code Insee " + annee_max + " Département"] != code_dep] # Ici on exclut notre département de la liste
     
     return df_resultat.reset_index(drop=True)
 
 
 def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateurs, par_habitant=False, afficher_les_deux=False):
     df_temp = df_arg.copy()
-    df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
+    df_temp["Code Insee " + annee_max + " Département"] = df_temp["Code Insee " + annee_max + " Département"].astype(str)
     annee_min_temp, annee_max_temp = intervalle_annees
     
-    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Code Insee 2024 Département"].isin(liste_codes_dep)) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
+    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Code Insee " + annee_max + " Département"].isin(liste_codes_dep)) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
                     
-    index_colonnes = ["Exercice", "Nom 2024 Département", "Population totale"]
+    index_colonnes = ["Exercice", "Nom " + annee_max + " Département", "Population totale"]
 
     pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()    # aggfunc permet d'avoir la somme de toutes les lignes d'épargne nette par exemple
     
@@ -389,31 +391,31 @@ def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateur
 
     fig = generer_graphiques(pivot, "Analyse Financière Comparative", indicateurs_a_tracer, par_habitant, afficher_les_deux)
 
-    colonnes_utiles = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
-    df_final = pivot[[colonne for colonne in colonnes_utiles if colonne in pivot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
+    colonnes_utiles = ["Exercice", "Nom " + annee_max + " Département"] + indicateurs_a_tracer
+    df_final = pivot[[colonne for colonne in colonnes_utiles if colonne in pivot.columns]].round(1).sort_values(by=["Exercice", "Nom " + annee_max + " Département"])
     
     return fig, df_final
 
 
 def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs, afficher_metro=True, afficher_region=False, par_habitant=False, afficher_les_deux=False):
     df_temp = df_arg.copy()
-    df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
+    df_temp["Code Insee " + annee_max + " Département"] = df_temp["Code Insee " + annee_max + " Département"].astype(str)
     code_dep = str(code_dep)
     annee_min_temp, annee_max_temp = intervalle_annees
     
-    df_dep_cible = df_temp[df_temp["Code Insee 2024 Département"] == code_dep]
+    df_dep_cible = df_temp[df_temp["Code Insee " + annee_max + " Département"] == code_dep]
     if df_dep_cible.empty: # Sécurité
         fig, ax = plt.subplots()
         ax.text(0.5, 0.5, "Aucune donnée disponible", fontsize=12, fontweight="bold", ha='center', va='center')
         return fig, pd.DataFrame()
         
-    strate = df_dep_cible["Strate population 2024"].iloc[0]
-    nom_dep = df_dep_cible["Nom 2024 Département"].iloc[0]
-    region = df_dep_cible["Nom 2024 Région"].iloc[0]
+    strate = df_dep_cible["Strate population " + annee_max + ""].iloc[0]
+    nom_dep = df_dep_cible["Nom " + annee_max + " Département"].iloc[0]
+    region = df_dep_cible["Nom " + annee_max + " Région"].iloc[0]
     
-    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Strate population 2024"] == strate) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
+    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & (df_temp["Strate population " + annee_max + ""] == strate) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
                     
-    index_colonnes = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Nom 2024 Région", "Outre-mer", "Population totale"]
+    index_colonnes = ["Exercice", "Code Insee " + annee_max + " Département", "Nom " + annee_max + " Département", "Nom " + annee_max + " Région", "Outre-mer", "Population totale"]
 
     pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()    # aggfunc permet d'avoir la somme de toutes les lignes d'épargne nette par exemple
     
@@ -469,53 +471,53 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
                 else:                                                                                                                                                                                                                                                                                                                                   # un != (car NaN != 0 renvoit True et derrière ça marcherait)
                     pivot[indic] = np.nan # Pareil que précédemment                                                                                                                                                                                                                                                                                # au lieu de > mais ce ne serait pas "propre"
 
-    df_cible = pivot[pivot["Code Insee 2024 Département"] == code_dep].copy()
-    df_autres = pivot[(pivot["Code Insee 2024 Département"] != code_dep) & (pivot["Outre-mer"] == "Non")].copy() # On ne prend pas en compte notre département dans la moyenne et on ne prend pas les outre-mer
+    df_cible = pivot[pivot["Code Insee " + annee_max + " Département"] == code_dep].copy()
+    df_autres = pivot[(pivot["Code Insee " + annee_max + " Département"] != code_dep) & (pivot["Outre-mer"] == "Non")].copy() # On ne prend pas en compte notre département dans la moyenne et on ne prend pas les outre-mer
     
     cols_mean = [c for c in indicateurs_a_tracer + ["Capacité de désendettement (vraie)"] if c in df_autres.columns]
     
     list_df_to_concat = [df_cible]
     if afficher_metro and not df_autres.empty:
         df_moyenne_metro = df_autres.groupby("Exercice")[cols_mean].mean().reset_index()
-        df_moyenne_metro["Nom 2024 Département"] = f"Moyenne strate {strate} (métropole)"
+        df_moyenne_metro["Nom " + annee_max + " Département"] = f"Moyenne strate {strate} (métropole)"
         list_df_to_concat.append(df_moyenne_metro)
         
     if afficher_region and not df_autres.empty:
-        df_autres_region = df_autres[df_autres["Nom 2024 Région"] == region]
+        df_autres_region = df_autres[df_autres["Nom " + annee_max + " Région"] == region]
         if not df_autres_region.empty:
             df_moyenne_region = df_autres_region.groupby("Exercice")[cols_mean].mean().reset_index()
-            df_moyenne_region["Nom 2024 Département"] = f"Moyenne strate {strate} (même région)"
+            df_moyenne_region["Nom " + annee_max + " Département"] = f"Moyenne strate {strate} (même région)"
             list_df_to_concat.append(df_moyenne_region)
             
     df_plot = pd.concat(list_df_to_concat, ignore_index=True)
 
     fig = generer_graphiques(df_plot, f"{nom_dep} comparé à la moyenne de sa strate", indicateurs_a_tracer, par_habitant, afficher_les_deux)
 
-    colonnes_utiles = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
-    df_final = df_plot[[colonne for colonne in colonnes_utiles if colonne in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
+    colonnes_utiles = ["Exercice", "Nom " + annee_max + " Département"] + indicateurs_a_tracer
+    df_final = df_plot[[colonne for colonne in colonnes_utiles if colonne in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom " + annee_max + " Département"])
     
     return fig, df_final
 
 
 def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indicateurs, meme_region=False, par_habitant=False, afficher_les_deux=False):
     df_temp = df_arg.copy()
-    df_temp["Code Insee 2024 Département"] = df_temp["Code Insee 2024 Département"].astype(str)
+    df_temp["Code Insee " + annee_max + " Département"] = df_temp["Code Insee " + annee_max + " Département"].astype(str)
     code_dep = str(code_dep)
     annee_min_temp, annee_max_temp = intervalle_annees
     
-    df_dep_cible = df_temp[df_temp["Code Insee 2024 Département"] == code_dep]
+    df_dep_cible = df_temp[df_temp["Code Insee " + annee_max + " Département"] == code_dep]
     if df_dep_cible.empty: # Sécurité
         fig, ax = plt.subplots()
         ax.text(0.5, 0.5, "Aucune donnée disponible", fontsize=12, fontweight="bold", ha='center', va='center')
         return fig, pd.DataFrame()
         
-    strate = df_dep_cible["Strate population 2024"].iloc[0]
-    nom_dep = df_dep_cible["Nom 2024 Département"].iloc[0]
-    region = df_dep_cible["Nom 2024 Région"].iloc[0]
+    strate = df_dep_cible["Strate population " + annee_max + ""].iloc[0]
+    nom_dep = df_dep_cible["Nom " + annee_max + " Département"].iloc[0]
+    region = df_dep_cible["Nom " + annee_max + " Région"].iloc[0]
     
-    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & ((df_temp["Outre-mer"] == "Non") | (df_temp["Code Insee 2024 Département"] == code_dep)) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
+    serie_filtre = (df_temp["Type de budget"] == "Budget principal") & ((df_temp["Outre-mer"] == "Non") | (df_temp["Code Insee " + annee_max + " Département"] == code_dep)) & (annee_min_temp <= df_temp["Exercice"]) & (df_temp["Exercice"] <= annee_max_temp)
                     
-    index_colonnes = ["Exercice", "Code Insee 2024 Département", "Nom 2024 Département", "Strate population 2024", "Outre-mer", "Nom 2024 Région", "Population totale"]
+    index_colonnes = ["Exercice", "Code Insee " + annee_max + " Département", "Nom " + annee_max + " Département", "Strate population " + annee_max + "", "Outre-mer", "Nom " + annee_max + " Région", "Population totale"]
 
     pivot = df_temp[serie_filtre].pivot_table(index=index_colonnes, columns="Agrégat", values="Montant", aggfunc="sum").reset_index()    # aggfunc permet d'avoir la somme de toutes les lignes d'épargne nette par exemple
     
@@ -571,28 +573,28 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
                 else:                                                                                                                                                                                                                                                                                                                                   # un != (car NaN != 0 renvoit True et derrière ça marcherait)
                     pivot[indic] = np.nan # Pareil que précédemment                                                                                                                                                                                                                                                                                # au lieu de > mais ce ne serait pas "propre"
 
-    df_cible = pivot[pivot["Code Insee 2024 Département"] == code_dep].copy()
+    df_cible = pivot[pivot["Code Insee " + annee_max + " Département"] == code_dep].copy()
     cols_mean = [c for c in indicateurs_a_tracer + ["Capacité de désendettement (vraie)"] if c in pivot.columns]
 
-    df_strate = pivot[(pivot["Strate population 2024"] == strate) & (pivot["Code Insee 2024 Département"] != code_dep)].copy()
+    df_strate = pivot[(pivot["Strate population " + annee_max + ""] == strate) & (pivot["Code Insee " + annee_max + " Département"] != code_dep)].copy()
     
     if meme_region:
-        df_strate = df_strate[df_strate["Nom 2024 Région"] == region]
+        df_strate = df_strate[df_strate["Nom " + annee_max + " Région"] == region]
 
     df_moy_strate = df_strate.groupby("Exercice")[cols_mean].mean().reset_index()
     label_moyenne = f"Moyenne strate {strate}" + (" (même région)" if meme_region else " (métropole)")
-    df_moy_strate["Nom 2024 Département"] = label_moyenne
+    df_moy_strate["Nom " + annee_max + " Département"] = label_moyenne
 
     df_metro = pivot[pivot["Outre-mer"] == "Non"].copy()
     df_moy_metro = df_metro.groupby("Exercice")[cols_mean].mean().reset_index()
-    df_moy_metro["Nom 2024 Département"] = "Moyenne métropole"
+    df_moy_metro["Nom " + annee_max + " Département"] = "Moyenne métropole"
     
     df_plot = pd.concat([df_cible, df_moy_strate, df_moy_metro], ignore_index=True)
 
     fig = generer_graphiques(df_plot, f"{nom_dep} comparé à la moyenne de sa strate et à la moyenne de la métropole", indicateurs_a_tracer, par_habitant, afficher_les_deux)
 
-    colonnes_utiles = ["Exercice", "Nom 2024 Département"] + indicateurs_a_tracer
-    df_final = df_plot[[colonne for colonne in colonnes_utiles if colonne in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom 2024 Département"])
+    colonnes_utiles = ["Exercice", "Nom " + annee_max + " Département"] + indicateurs_a_tracer
+    df_final = df_plot[[colonne for colonne in colonnes_utiles if colonne in df_plot.columns]].round(1).sort_values(by=["Exercice", "Nom " + annee_max + " Département"])
     
     return fig, df_final
 
@@ -605,7 +607,7 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
 st.title("📊 Outil d'analyse financière de départements")
 st.markdown("Bienvenue dans l'interface d'analyse. Choisissez une fonctionnalité du menu situé à votre gauche.")
 
-liste_deps = sorted(df["Code Insee 2024 Département"].astype(str).unique())
+liste_deps = sorted(df["Code Insee " + annee_max + " Département"].astype(str).unique())
 
 st.markdown("""
     <style>
