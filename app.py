@@ -132,6 +132,7 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
 
     # On affiche tout ce qu'il faut pour chaque graphe
     for i, axe_indice_i in enumerate(axes_liste[:n]):    # On met un coup de slicing pour eviter de faire un tour en trop quand on a un nombre impairs d'indicateur (cf le graphique vide de fin)
+        indic = indicateurs[i]
         
         if superposer:
             # Ici, i=0 ou i=1
@@ -152,7 +153,6 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
                 axe_indice_i.text(0.5, 0.5, label_txt, fontsize=12, fontweight="bold", va="center", ha="center", transform=axe_indice_i.transAxes)
 
         else:
-            indic = indicateurs[i]
             if indic not in df_plot.columns or df_plot[indic].isna().all():
                 label_txt = f"⚠️ {indic.replace(' (€/hab)', '')} non normalisable ⚠️" if "(€/hab)" in indic and (indic.replace(' (€/hab)', '') in indicateurs_calculés) else f"⚠️ {indic} introuvable ou vide ⚠️"
                 axe_indice_i.set_title(indic, fontsize=15, fontweight="bold", color="grey")
