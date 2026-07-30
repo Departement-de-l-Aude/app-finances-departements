@@ -36,7 +36,8 @@ if colonnes_manquantes:
 # Indicateurs calculés (tous non-normalisables, le code devra être adapté si on calcule de nouveaux indicateurs qui seraient normalisables) en utilisant les données OFGL
 indicateurs_calculés = [
     "Capacité de désendettement (années)", 
-    "Poids des AIS (%)"
+    "Poids des AIS (%)",
+    "Taux d'épargne brute (%)"
 ]
 
 # Catégories et sous-catégories d'indicateurs
@@ -101,7 +102,7 @@ dico_indicateurs = {
     },
     "6️⃣​ Autres": {
         "Indicateurs calculés via les données ofgl": [
-             "Capacité de désendettement (années)", "Poids des AIS (%)"
+             "Capacité de désendettement (années)", "Poids des AIS (%)", "Taux d'épargne brute (%)"
         ]
     }    
 }
@@ -258,6 +259,12 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
             ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100, 
             np.nan    # On ne trace pas le point du poids des AIS quand les dépenses de fctnmt sont nulles ou introuvables
         )
+    if "Taux d'épargne brute (%)" in indicateurs:
+        pivot["Taux d'épargne brute (%)"] = np.where(
+            pivot.get("Recettes de fonctionnement", 0) != 0,
+            (pivot.get("Epargne brute", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
+            np.nan
+        )
         
     indicateurs_a_tracer = indicateurs.copy()
 
@@ -271,7 +278,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
             for indic in indicateurs_a_tracer:
                 liste_indic_temp.append(indic)
                 indic_par_hab_temp = f"{indic} (€/hab)"
-                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
+                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)", "Taux d'épargne brute (%)"]:
                     pivot[indic_par_hab_temp] = pivot.apply(lambda ligne: ligne[indic] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)
                 else:
                     pivot[indic_par_hab_temp] = np.nan    # On crée une colonne vide pour quand même afficher un graphe vide dans lequel on ajoutera des infos pour l'utilisateurs
@@ -279,7 +286,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
             indicateurs_a_tracer = liste_indic_temp
         else:
             for indic in indicateurs_a_tracer:
-                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
+                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)", "Taux d'épargne brute (%)"]:
                     pivot[indic] = pivot.apply(lambda ligne: ligne[indic] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)    # remarque : on pourrait mettre
                 else:                                                                                                                                                           # un != (car NaN != 0 renvoit True et derrière ça marcherait)
                     pivot[indic] = np.nan # Pareil que précédemment                                                                                                          # au lieu de > mais ce ne serait pas "propre"
@@ -363,6 +370,12 @@ def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateur
             ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100, 
             np.nan    # On ne trace pas le point du poids des AIS quand les dépenses de fctnmt sont nulles ou introuvables
         )
+    if "Taux d'épargne brute (%)" in indicateurs:
+        pivot["Taux d'épargne brute (%)"] = np.where(
+            pivot.get("Recettes de fonctionnement", 0) != 0,
+            (pivot.get("Epargne brute", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
+            np.nan
+        )
         
     indicateurs_a_tracer = indicateurs.copy()
 
@@ -376,7 +389,7 @@ def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateur
             for indic in indicateurs_a_tracer:
                 liste_indic_temp.append(indic)
                 indic_par_hab_temp = f"{indic} (€/hab)"
-                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
+                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)", "Taux d'épargne brute (%)"]:
                     pivot[indic_par_hab_temp] = pivot.apply(lambda ligne: ligne[indic] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)
                 else:
                     pivot[indic_par_hab_temp] = np.nan    # On crée une colonne vide pour quand même afficher un graphe vide dans lequel on ajoutera des infos pour l'utilisateurs
@@ -384,7 +397,7 @@ def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateur
             indicateurs_a_tracer = liste_indic_temp
         else:
             for indic in indicateurs_a_tracer:
-                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
+                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)", "Taux d'épargne brute (%)"]:
                     pivot[indic] = pivot.apply(lambda ligne: ligne[indic] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)    # remarque : on pourrait mettre
                 else:                                                                                                                                                                                                                                                                                                                                   # un != (car NaN != 0 renvoit True et derrière ça marcherait)
                     pivot[indic] = np.nan # Pareil que précédemment                                                                                                                                                                                                                                                                                # au lieu de > mais ce ne serait pas "propre"
@@ -445,6 +458,12 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
             ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100, 
             np.nan    # On ne trace pas le point du poids des AIS quand les dépenses de fctnmt sont nulles ou introuvables
         )
+    if "Taux d'épargne brute (%)" in indicateurs:
+        pivot["Taux d'épargne brute (%)"] = np.where(
+            pivot.get("Recettes de fonctionnement", 0) != 0,
+            (pivot.get("Epargne brute", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
+            np.nan
+        )
         
     indicateurs_a_tracer = indicateurs.copy()
 
@@ -458,7 +477,7 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
             for indic in indicateurs_a_tracer:
                 liste_indic_temp.append(indic)
                 indic_par_hab_temp = f"{indic} (€/hab)"
-                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
+                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)", "Taux d'épargne brute (%)"]:
                     pivot[indic_par_hab_temp] = pivot.apply(lambda ligne: ligne[indic] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)
                 else:
                     pivot[indic_par_hab_temp] = np.nan    # On crée une colonne vide pour quand même afficher un graphe vide dans lequel on ajoutera des infos pour l'utilisateurs
@@ -466,7 +485,7 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
             indicateurs_a_tracer = liste_indic_temp
         else:
             for indic in indicateurs_a_tracer:
-                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
+                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)", "Taux d'épargne brute (%)"]:
                     pivot[indic] = pivot.apply(lambda ligne: ligne[indic] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)    # remarque : on pourrait mettre
                 else:                                                                                                                                                                                                                                                                                                                                   # un != (car NaN != 0 renvoit True et derrière ça marcherait)
                     pivot[indic] = np.nan # Pareil que précédemment                                                                                                                                                                                                                                                                                # au lieu de > mais ce ne serait pas "propre"
@@ -547,6 +566,12 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
             ((pivot.get("Allocations RSA", 0) + pivot.get("Allocations APA", 0) + pivot.get("Allocations PCH", 0)) / pivot.get("Dépenses de fonctionnement", 1)) * 100, 
             np.nan    # On ne trace pas le point du poids des AIS quand les dépenses de fctnmt sont nulles ou introuvables
         )
+    if "Taux d'épargne brute (%)" in indicateurs:
+        pivot["Taux d'épargne brute (%)"] = np.where(
+            pivot.get("Recettes de fonctionnement", 0) != 0,
+            (pivot.get("Epargne brute", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
+            np.nan
+        )
         
     indicateurs_a_tracer = indicateurs.copy()
 
@@ -560,7 +585,7 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
             for indic in indicateurs_a_tracer:
                 liste_indic_temp.append(indic)
                 indic_par_hab_temp = f"{indic} (€/hab)"
-                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
+                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)", "Taux d'épargne brute (%)"]:
                     pivot[indic_par_hab_temp] = pivot.apply(lambda ligne: ligne[indic] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)
                 else:
                     pivot[indic_par_hab_temp] = np.nan    # On crée une colonne vide pour quand même afficher un graphe vide dans lequel on ajoutera des infos pour l'utilisateurs
@@ -568,7 +593,7 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
             indicateurs_a_tracer = liste_indic_temp
         else:
             for indic in indicateurs_a_tracer:
-                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)"]:
+                if indic not in ["Capacité de désendettement (années)", "Poids des AIS (%)", "Capacité de désendettement (vraie)", "Taux d'épargne brute (%)"]:
                     pivot[indic] = pivot.apply(lambda ligne: ligne[indic] / ligne["Population totale"] if ligne.get("Population totale", 0) > 0 else np.nan, axis=1)    # remarque : on pourrait mettre
                 else:                                                                                                                                                                                                                                                                                                                                   # un != (car NaN != 0 renvoit True et derrière ça marcherait)
                     pivot[indic] = np.nan # Pareil que précédemment                                                                                                                                                                                                                                                                                # au lieu de > mais ce ne serait pas "propre"
