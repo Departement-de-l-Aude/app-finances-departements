@@ -148,7 +148,8 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
             if df_melt["Valeur"].notna().any():
                 sns.lineplot(data=df_melt, x="Exercice", y="Valeur", hue="Indicateur", style="Indicateur", markers=True, dashes=False, ax=axe_indice_i, linewidth=3)
             else:
-                axe_indice_i.text(0.5, 0.5, "⚠️ Aucun indicateur disponible ⚠️", fontsize=12, fontweight="bold", va="center", ha="center", transform=axe_indice_i.transAxes)
+                label_txt = f"⚠️ {indic.replace(' (€/hab)', '')} non normalisable ⚠️" if "(€/hab)" in indic and (indic.replace(' (€/hab)', '') in indicateurs_calculés) else f"⚠️ {indic} introuvable ou vide ⚠️"
+                axe_indice_i.text(0.5, 0.5, label_txt, fontsize=12, fontweight="bold", va="center", ha="center", transform=axe_indice_i.transAxes)
 
         else:
             indic = indicateurs[i]
