@@ -39,7 +39,7 @@ Fonction 5 « Département comparé à la moyenne de sa strate et à la moyenne 
 - Possibilité de restreindre la moyenne des départements de même strate de la métropole à ceux de même strate ET de même région 
 - Possibilité de choisir l’intervalle des années
 
-*<u>Note : fonction assez similaire à la 4ème, offre une vue plus large</u>*
+<u>*Note : fonction assez similaire à la 4ème, offre une vue plus large*</u>
 
 ## Stack Technique
 * Python
