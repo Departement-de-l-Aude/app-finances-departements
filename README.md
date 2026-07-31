@@ -1,6 +1,6 @@
 # Application d'Analyse Financière Départementale
 
-**Apperçu du site :**
+_**Apperçu du site :**_
 <img width="1918" height="1028" alt="gif_site_clement" src="https://github.com/user-attachments/assets/a6dc0fd9-64e9-445d-9f19-b48aca32c089" />
 
 ---
