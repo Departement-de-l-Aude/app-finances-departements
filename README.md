@@ -37,8 +37,8 @@ Fonction 4 « Département comparé à la moyenne de sa strate »
 Fonction 5 « Département comparé à la moyenne de sa strate et à la moyenne de la métropole » 
 - Renvoie un graphique par indicateur, dans lequel on trace une courbe pour le département, une courbe pour la moyenne des départements de même strate et une dernière courbe pour la moyenne de tous les départements de la métropole 
 - Possibilité de restreindre la moyenne des départements de même strate de la métropole à ceux de même strate ET de même région 
-- Possibilité de choisir l’intervalle des années 
-- *Note : fonction assez similaire à la 4ème, offre une vue plus large*
+- Possibilité de choisir l’intervalle des années
+_*Note : fonction assez similaire à la 4ème, offre une vue plus large*_
 
 ## Stack Technique
 * Python
