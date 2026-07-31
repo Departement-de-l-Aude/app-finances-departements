@@ -1,7 +1,7 @@
 # Application d'Analyse Financière Départementale
 
-🚀 **[Accéder à l'application en ligne](https://departement-de-l-aude-app-finances-departements-app.streamlit.app/)**  
-📖 **[Consulter le tutoriel d'utilisation (PDF)](https://github.com/user-attachments/files/30582839/tuto.utilisation.pdf)**
+**Accéder à l'application en ligne : [lien](https://departement-de-l-aude-app-finances-departements-app.streamlit.app/)**  
+**Consulter le tutoriel d'utilisation (PDF) : [pdf](https://github.com/user-attachments/files/30582839/tuto.utilisation.pdf)**
 
 <!-- GLISSE ET DÉPOSE TON FICHIER GIF JUSTE EN DESSOUS DE CETTE LIGNE -->
 <img width="1918" height="1028" alt="gif_site_clement" src="https://github.com/user-attachments/assets/a6dc0fd9-64e9-445d-9f19-b48aca32c089" />
