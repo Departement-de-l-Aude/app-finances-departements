@@ -2,7 +2,6 @@
 
 🚀 **[Accéder à l'application en ligne][COLLE_TON_LIEN_ICI]**
 
-<!-- GLISSE ET DÉPOSE TON IMAGE OU TON GIF JUSTE EN DESSOUS DE CETTE LIGNE -->
 <img width="1918" height="1028" alt="gif_site_clement" src="https://github.com/user-attachments/assets/f7f4ac1d-ee02-431d-b5d0-016281f334bb" />
 
 
