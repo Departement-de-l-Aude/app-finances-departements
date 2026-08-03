@@ -278,7 +278,7 @@ def analyser_un_departement(df_arg, code_dep, intervalle_annees, indicateurs, pa
     if "Taux d'épargne brute (%)" in indicateurs:
         pivot["Taux d'épargne brute (%)"] = np.where(
             pivot.get("Recettes de fonctionnement", 0) != 0,
-            (pivot.get("Epargne brute", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
+            ( (pivot.get("Epargne brute", 0) - pivot.get("Produit des cessions d'immobilisations", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
             np.nan
         )
         
@@ -389,7 +389,7 @@ def comparer_departements(df_arg, liste_codes_dep, intervalle_annees, indicateur
     if "Taux d'épargne brute (%)" in indicateurs:
         pivot["Taux d'épargne brute (%)"] = np.where(
             pivot.get("Recettes de fonctionnement", 0) != 0,
-            (pivot.get("Epargne brute", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
+            ( (pivot.get("Epargne brute", 0) - pivot.get("Produit des cessions d'immobilisations", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
             np.nan
         )
         
@@ -477,7 +477,7 @@ def comparer_departement_strate(df_arg, code_dep, intervalle_annees, indicateurs
     if "Taux d'épargne brute (%)" in indicateurs:
         pivot["Taux d'épargne brute (%)"] = np.where(
             pivot.get("Recettes de fonctionnement", 0) != 0,
-            (pivot.get("Epargne brute", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
+            ( (pivot.get("Epargne brute", 0) - pivot.get("Produit des cessions d'immobilisations", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
             np.nan
         )
         
@@ -585,7 +585,7 @@ def comparer_departement_strate_metro(df_arg, code_dep, intervalle_annees, indic
     if "Taux d'épargne brute (%)" in indicateurs:
         pivot["Taux d'épargne brute (%)"] = np.where(
             pivot.get("Recettes de fonctionnement", 0) != 0,
-            (pivot.get("Epargne brute", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
+            ( (pivot.get("Epargne brute", 0) - pivot.get("Produit des cessions d'immobilisations", 0) / pivot.get("Recettes de fonctionnement", 1)) * 100,
             np.nan
         )
         
