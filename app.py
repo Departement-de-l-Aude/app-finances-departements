@@ -65,7 +65,7 @@ dico_indicateurs = {
         "Recettes d'investissement": [
             "Recettes d'investissement",
             "Recettes d'investissement hors emprunts",
-            "FCTVA", "Subventions reçues et participations", "DDEC", "Emprunts hors GAD", "Autres recettes d'investissement"
+            "FCTVA", "Subventions reçues et participations", "DDEC", "Emprunts hors GAD", "Autres recettes d'investissement", "indicateur exemple"
         ],
         "Totaux": [
             "Recettes totales",
