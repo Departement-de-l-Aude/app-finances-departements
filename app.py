@@ -4,6 +4,7 @@ import seaborn as sns
 import numpy as np
 import streamlit as st
 import io
+import matplotlib.ticker as ticker
 
 # Configuration page web
 st.set_page_config(page_title="Analyse financière départementale", layout="wide", page_icon="📊")
@@ -165,6 +166,8 @@ def generer_graphiques(df_plot, titre, indicateurs, par_habitant=False, afficher
         # Mêmes abscisses pour tout les graphes
         axe_indice_i.set_xlim(df_plot["Exercice"].min() - 0.2, df_plot["Exercice"].max() + 0.2)
         axe_indice_i.set_xticks(df_plot["Exercice"].unique())
+
+        axe_indice_i.yaxis.set_major_formatter(ticker.FuncFormatter(formatter_nombres))    # On rajoute le formatage des ordonnées
         
         # Gestion des seuils de désendettement (s'applique si l'indicateur est présent dans l'axe actuel)
         indics_presents = indics_axe if superposer else [indicateurs[i]]
@@ -212,6 +215,18 @@ def ajouter_etiquettes_desendettement(axe, df_donnees):
                 fontweight="bold",
                 bbox=dict(boxstyle="round,pad=0.5", fc="black", alpha=0.75, edgecolor="red", linewidth=3)
             )
+            
+# Fonction auxilière rajoutée en cours de route
+def formatter_nombres(x, pos):
+    abs_x = abs(x)
+    if abs_x >= 1e9:
+        return f"{x / 1e9:.1f} Md".replace('.', ',')  # Milliards (ex: 1,2 Md)
+    elif abs_x >= 1e6:
+        return f"{x / 1e6:.1f} M".replace('.', ',')   # Millions (ex: 45,3 M)
+    elif abs_x >= 1e3:
+        return f"{x / 1e3:.0f} k"                     # Milliers (ex: 350 k)
+    else:
+        return f"{int(x)}"                            # Entier pour les petites valeurs (années, %)
 
 
 
