@@ -220,13 +220,13 @@ def ajouter_etiquettes_desendettement(axe, df_donnees):
 def formatter_nombres(x, pos):
     abs_x = abs(x)
     if abs_x >= 1e9:
-        return f"{x / 1e9:.1f} Md".replace('.', ',')  # Milliards (ex: 1,2 Md)
+        return f"{x / 1e9:.1f} Md".replace('.', ',')
     elif abs_x >= 1e6:
-        return f"{x / 1e6:.1f} M".replace('.', ',')   # Millions (ex: 45,3 M)
+        return f"{x / 1e6:.1f} M".replace('.', ',')
     elif abs_x >= 1e3:
-        return f"{x / 1e3:.0f} k"                     # Milliers (ex: 350 k)
+        return f"{x / 1e3:.0f} k"
     else:
-        return f"{int(x)}"                            # Entier pour les petites valeurs (années, %)
+        return f"{int(x)}"
 
 
 
