@@ -12,7 +12,7 @@ st.set_page_config(page_title="Analyse financière départementale", layout="wid
 # Chargement données et on les garde en mémoire vive pour pas que le site rame trop
 @st.cache_data
 def load_data():
-    return pd.read_csv("ofgl-base-departements.zip", sep=";", low_memory=False)    # Pour le fichier de 2024, les séparateurs sont des "," mais pour le nouveau, ce sont des ";"
+    return pd.read_csv("ofgl-base-departements.zip", sep=",", low_memory=False)    # Pour le fichier de 2024, les séparateurs sont des "," mais pour le nouveau, ce sont des ";"
 
 # Prévention d'erreurs
 try:
@@ -65,7 +65,7 @@ dico_indicateurs = {
         "Recettes d'investissement": [
             "Recettes d'investissement",
             "Recettes d'investissement hors emprunts",
-            "FCTVA", "Subventions reçues et participations", "DDEC", "Emprunts hors GAD", "Autres recettes d'investissement", "indicateur exemple"
+            "FCTVA", "Subventions reçues et participations", "DDEC", "Emprunts hors GAD", "Autres recettes d'investissement"
         ],
         "Totaux": [
             "Recettes totales",
