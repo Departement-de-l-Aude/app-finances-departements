@@ -224,7 +224,7 @@ def formatter_nombres(x, pos):
     elif abs_x >= 1e6:
         return f"{x / 1e6:.1f} M".replace('.', ',')
     elif abs_x >= 1e3:
-        return f"{x / 1e3:.0f} k"
+        return f"{x / 1e3:.1f} k"
     else:
         return f"{int(x)}"
 
