@@ -25,6 +25,15 @@ except FileNotFoundError:
 annee_min = int(df["Exercice"].min())
 annee_max = int(df["Exercice"].max())
 
+colonnes_necessaires = ["Exercice", "Nom " + str(annee_max) + " Département", "Code Insee " + str(annee_max) + " Département", "Population totale"]
+colonnes_manquantes = [col for col in colonnes_necessaires if col not in df.columns]
+
+if colonnes_manquantes:
+    st.error(f"Erreur : il manque la ou les colonnes suivantes : {', '.join(colonnes_manquantes)}")
+    st.stop()
+
+
+
 # Indicateurs calculés (tous non-normalisables, le code devra être adapté si on calcule de nouveaux indicateurs qui seraient normalisables) en utilisant les données OFGL
 indicateurs_calculés = [
     "Capacité de désendettement (années)", 
