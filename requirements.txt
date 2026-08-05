@@ -3,4 +3,4 @@ matplotlib
 seaborn
 streamlit
 numpy
-starlette==0.41.0
+starlette==0.42.0
