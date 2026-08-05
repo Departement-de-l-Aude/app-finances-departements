@@ -1,6 +1,5 @@
 pandas
 matplotlib
 seaborn
-streamlit
 numpy
-starlette==0.44.0
+streamlit
